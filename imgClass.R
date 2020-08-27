@@ -1,15 +1,4 @@
-# automatic classification of roofs and streets:
-buildClassMod(dataPath='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS/',
-              image='tz.tif',
-              groundTruth='groundtruth2.shp', # column name of surface type in groundTruth must be 'cover'
-              spectrSigName='spectrSigTz.Rdata',
-              modelName='rForestTz.Rdata',
-              nCores=5)
-
-predictSurfClass(dataPath='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS/',
-                 modelName='rForestTz.Rdata',
-                 image='tz.tif',
-                 predName='tzClass.img')
+# image segmentation with random forest based on spectral signatures
 
 # build image classification model
 buildClassMod <- function(dataPath, image, groundTruth, spectrSigName, modelName,
@@ -112,4 +101,3 @@ predictSurfClass <- function(dataPath, modelName, image, predName){
   raster::writeRaster(pred, filename=predName, overwrite=TRUE)
   cat('\ndone\n')
 }
-
