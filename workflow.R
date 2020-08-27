@@ -3,14 +3,16 @@
 # step 2: classify image for roofs and streets
 # step 3: make overlays for total impervious area, roof and street for each subcatchment
 # step 4: compute ABIMO variables PROBAU (%roof), VG (%impervious) and STR_FLGES
-# step 5: use raw code to compute and allocate PROVGU and all other ABIMO variables
-# step 6: go to ABIMO and run (could we call it from R?)
-# step 7: post-process ABIMO output file -> join it with input shape file for visualization
+# step 5: compute annual climatic values ETP and precipitation
+# step 6: use raw code to compute and allocate PROVGU and all other ABIMO variables
+# step 7: go to ABIMO and run (could we call it from R?)
+# step 8: post-process ABIMO output file -> join it with input shape file for visualization
 #         in GIS
 
 #rawdir='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS'
 #rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS/'
 
+# step 1: build classification model
 buildClassMod(dataPath='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS/',
               image='tz.tif',
               # column name of surface type in groundTruth must be 'cover'
@@ -19,16 +21,25 @@ buildClassMod(dataPath='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_S
               modelName='rForestTz.Rdata',
               nCores=5)
 
+# check model performance
+library(caret)
+load('c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS/rForestJinxi.Rdata')
+model
+model$finalModel$confusion
+
+# step 2: classify image for roofs and streets
 predictSurfClass(dataPath='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS/',
                  modelName='rForestTz.Rdata',
                  image='tz.tif',
                  predName='tzClass.img')
 
+# step 3: make overlays for total impervious area, roof and street for each subcatchment
 makeOverlay(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS/',
             rasterData='jxClass.img', 
             subcatchmShape='ABIMO_Jinxi_5.shp',
             overlayName='surfType')
 
+# step 4: compute ABIMO variables PROBAU (%roof), VG (%impervious) and STR_FLGES
 # 2=roof, 80=impervious (in another raster dataset), 4 = street
 computeABIMOvariable(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS/',
                      subcatchmShape='ABIMO_Jinxi_5.shp',
@@ -39,12 +50,27 @@ computeABIMOvariable(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/G
                      outDFname='impervJx.txt',
                      street=FALSE)
 
+# step 5: annual climate variables ETP and rainfall
+computeABIMOclimate(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/climate/',
+                    fileName='prec.txt',
+                    header=c('date', 'ETP'),
+                    outAnnual='Rainannual.txt',
+                    outSummer='Rainsummer.txt')
+
+computeABIMOclimate(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/climate/',
+                    fileName='ETP.txt',
+                    header=c('date', 'ETP'),
+                    outAnnual='ETPannual.txt',
+                    outSummer='ETPsummer.txt')
+
+# step 8: post-process ABIMO output file -> join it with input shape file for visualization
+#         in GIS
 postProcessABIMO(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/ABIMO/',
                  nameABIMOin='ABIMO_Jinxi_v1.shp',
                  nameABIMOout='ABIMO_Jinxi_v1out.dbf',
                  ABIMOjoinedName='ABIMO_Jinxi_v1outJoined.dbf')
 
-
+# step 6: use raw code to compute and allocate PROVGU and all other ABIMO variables
 # raw code ------------------------------------------------------------------------------
 
 # % other impervious areas = total impervious % (VG, from global data set) 
