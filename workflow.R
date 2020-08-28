@@ -1,5 +1,5 @@
 # workflow:
-# step 1: build classification model
+# step 1: build image classification model
 # step 2: classify image for roofs and streets
 # step 3: make overlays for total impervious area, roof and street for each subcatchment
 # step 4: compute ABIMO variables PROBAU (%roof), VG (%impervious) and STR_FLGES
@@ -13,13 +13,13 @@
 #rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS/'
 
 # step 1: build classification model
-buildClassMod(dataPath='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS/',
-              image='tz.tif',
+buildClassMod(dataPath='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS/',
+              image='jxCropped.img',
               # column name of surface type in groundTruth must be 'cover'
-              groundTruth='groundtruth2.shp', 
-              spectrSigName='spectrSigTz.Rdata',
-              modelName='rForestTz.Rdata',
-              nCores=5)
+              groundTruth='groundtruth.shp',
+              spectrSigName='spectrSigJinxi.Rdata',
+              modelName='rForestTz_gridSearch.Rdata',
+              nCores=1)
 
 # check model performance
 library(caret)

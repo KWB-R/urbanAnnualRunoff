@@ -32,7 +32,7 @@ buildClassMod <- function(dataPath, image, groundTruth, spectrSigName, modelName
                   cover=rep(coverTypes, times=unlist(lapply(Xi, nrow))))
   X$cover <- as.factor(X$cover)
   
-  # train random forest model, repeated cross-validation:
+  # train random forest model, repeated cross-validation, grid search:
   
   # make training and test sets (stratified)
   set.seed(1)
@@ -49,16 +49,17 @@ buildClassMod <- function(dataPath, image, groundTruth, spectrSigName, modelName
                                        number=3, 
                                        repeats=2,
                                        index=caret::createFolds(factor(Xtrain$cover), 
-                                                                returnTrain=T),
+                                                                returnTrain=TRUE),
                                        search='grid',
                                        allowParallel=TRUE)
   cat('\ntraining model...')
   model <- caret::train(form=cover ~., 
                         data=Xtrain, 
                         method="rf",
-                        ntree=300,
-                        nodesize=10,
-                        tuneLength=3,
+                        tunegrid=expand.grid(mtry=1:3, 
+                                             nodesize=2:10, 
+                                             replace=c(TRUE, FALSE), 
+                                             ntree=seq(100, 300, by=20)), 
                         trControl=train.control)
   
   stopCluster(cl)
