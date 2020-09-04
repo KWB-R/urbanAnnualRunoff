@@ -1,5 +1,5 @@
 # read Climate Engine data and compute 
-# https://app.climateengine.org/climateEngine
+# source: https://app.climateengine.org/climateEngine
 
 computeABIMOclimate <- function(rawdir, 
                                 fileName, 

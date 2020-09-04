@@ -3,7 +3,7 @@ makeOverlay <- function(rawdir, rasterData, subcatchmShape, overlayName){
   
   # This function ca be used to overlay subcatchment polygons (shapefile) with two
   # types of raster datasets 
-  # - imperviousness: http://data.ess.tsinghua.edu.cn/fromglc10_2017v01.html
+  # - imperviousness: (e.g., http://data.ess.tsinghua.edu.cn/fromglc10_2017v01.html)
   # - classified image containing roof and street pixels
   
   library(raster)

@@ -1,5 +1,6 @@
 # workflow:
-# step 1: build image classification model
+# step 0: load scripts
+# step 1: build random forest model for image classification and check performance
 # step 2: classify image for roofs and streets
 # step 3: make overlays for total impervious area, roof and street for each subcatchment
 # step 4: compute ABIMO variables PROBAU (%roof), VG (%impervious) and STR_FLGES
@@ -11,27 +12,34 @@
 
 #rawdir='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS'
 #rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS/'
+#setwd(rawdir)
+
+# step 0: load scripts
+source('C:/Users/rtatmuv/Desktop/R_Development/RScripts/KEYS/imgClass.R')
+source('C:/Users/rtatmuv/Desktop/R_Development/RScripts/KEYS/abimo.R')
 
 # step 1: build classification model
-buildClassMod(dataPath='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS/',
+buildClassMod(rawdir='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS',
               image='jxCropped.img',
-              # column name of surface type in groundTruth must be 'cover'
-              groundTruth='groundtruth.shp',
+              groundTruth='groundtruth.shp', # column name of surface type in groundTruth must be 'cover'
               spectrSigName='spectrSigJinxi.Rdata',
-              modelName='rForestTz_gridSearch.Rdata',
-              nCores=1)
+              modelName='rForestJx.Rdata',
+              overlayExists=FALSE,
+              nCores=1,
+              mtryGrd=1:3, ntreeGrd=seq(80, 150, by=10),
+              nfolds=3, nodesize=1, cvrepeats=2)
 
 # check model performance
-library(caret)
-load('c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS/rForestJinxi.Rdata')
-model
-model$finalModel$confusion
+load('rForestJx.Rdata')
+caret::confusionMatrix(data=model$finalModel$predicted, 
+                       reference=model$trainingData$.outcome, mode='prec_recall')
 
 # step 2: classify image for roofs and streets
-predictSurfClass(dataPath='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS/',
-                 modelName='rForestTz.Rdata',
-                 image='tz.tif',
-                 predName='tzClass.img')
+predictSurfClass(rawdir='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS/',
+                 modelName='rForestJx.Rdata',
+                 image='jxCropped.img',
+                 predName='jxClass.img',
+                 crsEPSG='+init=EPSG:4586')
 
 # step 3: make overlays for total impervious area, roof and street for each subcatchment
 makeOverlay(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS/',
