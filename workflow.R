@@ -16,47 +16,47 @@
 
 # step 0: load scripts
 source('C:/Users/rtatmuv/Desktop/R_Development/RScripts/KEYS/imgClass.R')
-source('C:/Users/rtatmuv/Desktop/R_Development/RScripts/KEYS/abimo.R')
+source('C:/kwb/KEYS/RWorkflows/abimo.R')
 
 # step 1: build classification model
-buildClassMod(rawdir='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS',
-              image='jxCropped.img',
-              groundTruth='groundtruth.shp', # column name of surface type in groundTruth must be 'cover'
-              spectrSigName='spectrSigJinxi.Rdata',
-              modelName='rForestJx.Rdata',
-              overlayExists=FALSE,
+buildClassMod(rawdir='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS',
+              image='tz.tif',
+              groundTruth='groundtruth2.shp', # column name of surface type in groundTruth must be 'cover'
+              spectrSigName='spectrSigTz.Rdata',
+              modelName='rForestTz.Rdata',
+              overlayExists=TRUE,
               nCores=1,
               mtryGrd=1:3, ntreeGrd=seq(80, 150, by=10),
               nfolds=3, nodesize=1, cvrepeats=2)
 
 # check model performance
-load('rForestJx.Rdata')
+load('Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS/rForestTz.Rdata')
 caret::confusionMatrix(data=model$finalModel$predicted, 
                        reference=model$trainingData$.outcome, mode='prec_recall')
 
 # step 2: classify image for roofs and streets
 predictSurfClass(rawdir='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS/',
-                 modelName='rForestJx.Rdata',
-                 image='jxCropped.img',
-                 predName='jxClass.img',
+                 modelName='rForestTz.Rdata',
+                 image='tz.tif',
+                 predName='tzClass.tif',
                  crsEPSG='+init=EPSG:4586')
 
 # step 3: make overlays for total impervious area, roof and street for each subcatchment
 makeOverlay(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS/',
-            rasterData='jxClass.img', 
-            subcatchmShape='ABIMO_Jinxi_5.shp',
+            rasterData='tzClass.img', 
+            subcatchmShape='ABIMO_TZ1.shp',
             overlayName='surfType')
 
 # step 4: compute ABIMO variables PROBAU (%roof), VG (%impervious) and STR_FLGES
-# 2=roof, 80=impervious (in another raster dataset), 4 = street
-computeABIMOvariable(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS/',
-                     subcatchmShape='ABIMO_Jinxi_5.shp',
-                     mask='maskUrbanCore.shp',
-                     rasterData='imperv.tif',
-                     overlayName='imperv',
-                     targetValue=80,
-                     outDFname='impervJx.txt',
-                     street=FALSE)
+# 2=roof, 80=impervious (in another raster dataset), 4 = street Jx, 3 = street Tz
+computeABIMOvariable(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS/',
+                     subcatchmShape='ABIMO_TZ1.shp',
+                     mask='mask.shp',
+                     rasterData='tzClass.img',
+                     overlayName='surfType',
+                     targetValue=3,
+                     outDFname='streetTz.txt',
+                     street=TRUE)
 
 # step 5: annual climate variables ETP and rainfall
 computeABIMOclimate(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/climate/',

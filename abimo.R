@@ -1,5 +1,6 @@
 # spatial overlay of subcatchments and raster holding information required by ABIMO
-makeOverlay <- function(rawdir, rasterData, subcatchmShape, overlayName){
+makeOverlay <- function(rawdir, rasterData, subcatchmShape, 
+                        overlayName, subcatchmNamesCol){
   
   # This function ca be used to overlay subcatchment polygons (shapefile) with two
   # types of raster datasets 
@@ -16,6 +17,8 @@ makeOverlay <- function(rawdir, rasterData, subcatchmShape, overlayName){
 
   cat('\noverlaying data...')
   assign(x=overlayName, value=raster::extract(x=surf, y=subc))
+  names(surfType) <- subc@data[, subcatchmNamesCol]
+  
   cat('\nsaving overlay...')
   save(list=overlayName, file=paste0(overlayName, '.Rdata'))
   cat('\ndone\n')
@@ -27,12 +30,12 @@ computeABIMOvariable <- function(rawdir, subcatchmShape, rasterData,
                                  overlayName, targetValue, outDFname,
                                  mask, street){
   
-  # This function can be used to generate the data required for ABIMO columns:
+  # This function can be used to generate the data required for following ABIMO columns:
   # - VG: % imperviousness
   # - PROBAU: % roof area
   # - STR_FLGES: street area
-  # It reads overlay objects produced by makeOverlay and uses pixel sizes to compute
-  # the corresponding areas
+  # It reads an overlay object produced by makeOverlay and uses pixel sizes to compute
+  # the corresponding areas, as well as %coverage based on subcatchment areas
   
   # Street areas are allocated to each subcatchment based on their size. Since there
   # may be internal and external street area (if the subcatchment polygons have gaps
@@ -50,22 +53,14 @@ computeABIMOvariable <- function(rawdir, subcatchmShape, rasterData,
   surf <- raster::raster(rasterData)
   mask <- raster::shapefile(mask)
   
-  # change decimal separator from comma to point in subcatchment data and convert to
-  # numbers
-  subc@data <- as.data.frame(apply(X=apply(X=subc@data,
-                                           c(1, 2),
-                                           FUN=gsub,
-                                           pattern=',',
-                                           replacement='.'),
-                                   c(1, 2),
-                                   FUN=as.numeric),
-                             stringsAsFactors = FALSE)
-  
   # pad CODE in in subcatchment data with zeroes
-  nch <- max(nchar(subc@data$CODE))
-  subc@data$CODE <- formatC(x=subc@data$CODE,
-                            width=nch+1,
-                            flag=0)
+  nchi <- nchar(subc@data$CODE)
+  nchmax <- max(nchi)
+  npad = nchmax - nchi + 1
+  for(i in 1:length(npad)){
+    subc@data$CODE[i] <- paste0(paste(rep(0, times=npad[i]), collapse=''), 
+                               subc@data$CODE[i])
+  }
   cat('\ndone\n')
   
   # grab overlay object
@@ -80,6 +75,12 @@ computeABIMOvariable <- function(rawdir, subcatchmShape, rasterData,
   # routine for street area
   if(street){
     
+    # change decimal separator from comma to point in subcatchment data and convert to
+    # numbers
+    subc@data$FLGES <- as.numeric(gsub(pattern=',', 
+                                       replacement='.', 
+                                       x=subc@data$FLGES))
+    
     # as is done for Berlin, street area outside of the subcatchment polygons is distributed
     # among the polygons in proportion to their area. thus: 
     # street area of polygon = internal street area + allocated external street area 
@@ -90,7 +91,7 @@ computeABIMOvariable <- function(rawdir, subcatchmShape, rasterData,
     cat('\ndone\n')
     
     # street area within subcatchment polygons
-    streetAreaIn <- sapply(X=get(overlayName), 
+    streetAreaIn <- sapply(X=get(overlayName),
                            FUN=function(a) sum(a==targetValue)*cellsize)
     
     # total street area in study area
