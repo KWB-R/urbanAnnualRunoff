@@ -53,14 +53,13 @@ computeABIMOvariable <- function(rawdir, subcatchmShape, rasterData,
   surf <- raster::raster(rasterData)
   mask <- raster::shapefile(mask)
   
-  # pad CODE in in subcatchment data with zeroes
+  # pad CODE in subcatchment data with zeroes
   nchi <- nchar(subc@data$CODE)
   nchmax <- max(nchi)
-  npad = nchmax - nchi + 1
-  for(i in 1:length(npad)){
-    subc@data$CODE[i] <- paste0(paste(rep(0, times=npad[i]), collapse=''), 
-                               subc@data$CODE[i])
-  }
+  subc@data$CODE <- sapply(X=subc@data$CODE, FUN=function(a){
+    npad <- nchmax - nchar(a) + 1
+    paste0(paste(rep(0, times=npad), collapse=''), a)
+  }, USE.NAMES=FALSE)
   cat('\ndone\n')
   
   # grab overlay object

@@ -16,6 +16,7 @@
 
 # step 0: load scripts
 source('C:/Users/rtatmuv/Desktop/R_Development/RScripts/KEYS/imgClass.R')
+source('C:/kwb/KEYS/RWorkflows/imgClass.R')
 source('C:/kwb/KEYS/RWorkflows/abimo.R')
 
 # step 1: build classification model
@@ -54,8 +55,8 @@ computeABIMOvariable(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Beijing/_DataAnalysis
                      mask='mask.shp',
                      rasterData='tzClass.img',
                      overlayName='surfType',
-                     targetValue=3,
-                     outDFname='streetTz.txt',
+                     targetValue=2,
+                     outDFname='roofTz.txt',
                      street=TRUE)
 
 # step 5: annual climate variables ETP and rainfall
