@@ -57,7 +57,7 @@ computeABIMOvariable <- function(rawdir, subcatchmShape, rasterData,
   nchi <- nchar(subc@data$CODE)
   nchmax <- max(nchi)
   subc@data$CODE <- sapply(X=subc@data$CODE, FUN=function(a){
-    npad <- nchmax - nchar(a) + 1
+    npad <- nchmax - nchar(a)
     paste0(paste(rep(0, times=npad), collapse=''), a)
   }, USE.NAMES=FALSE)
   cat('\ndone\n')
@@ -146,6 +146,17 @@ postProcessABIMO <- function(rawdir, nameABIMOin, nameABIMOout, ABIMOjoinedName)
   ABIMOin <- raster::shapefile(x=nameABIMOin, stringsAsFactors=FALSE)
   ABIMOout <- foreign::read.dbf(file=nameABIMOout, as.is=TRUE)
   
+  # temporarily store CODE in vector and pad with zeroes to match
+  codetemporary <- ABIMOin@data$CODE
+  
+  # pad CODE in subcatchment data with zeroes to match ABIMOout$CODE
+  nchi <- nchar(codetemporary)
+  nchmax <- max(nchi)
+  codetemporary <- sapply(X=codetemporary, FUN=function(a){
+    npad <- nchmax - nchar(a)
+    paste0(paste(rep(0, times=npad), collapse=''), a)
+  }, USE.NAMES=FALSE)
+  
   # change decimal separator from comma to point
   ABIMOin@data <- as.data.frame(apply(X=apply(X=ABIMOin@data,
                                               c(1, 2),
@@ -156,10 +167,8 @@ postProcessABIMO <- function(rawdir, nameABIMOin, nameABIMOout, ABIMOjoinedName)
                                       FUN=as.numeric),
                                 stringsAsFactors = FALSE)
   
-  # pad CODE in ABIMOin with zeroes to match CODE in ABIMOout
-  ABIMOin$CODE <- formatC(x=ABIMOin$CODE, 
-                          width=nchar(ABIMOout$CODE)[1],
-                          flag=0)
+  # set CODE in subcatchment data to padded CODE
+  ABIMOin$CODE <- codetemporary
   
   # join 
   ABIMOjoined <- ABIMOin
