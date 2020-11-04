@@ -15,9 +15,8 @@
 #setwd(rawdir)
 
 # step 0: load scripts
-source('C:/Users/rtatmuv/Desktop/R_Development/RScripts/KEYS/imgClass.R')
-source('C:/kwb/KEYS/RWorkflows/imgClass.R')
-source('C:/kwb/KEYS/RWorkflows/abimo.R')
+source('imgClass.R')
+source('abimo.R')
 
 # step 1: build classification model
 buildClassMod(rawdir='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS',
