@@ -1,7 +1,9 @@
 # image segmentation with random forest based on spectral signatures
 
 # build image classification model. overlay object is named 'ov'
-buildClassMod <- function(rawdir, image, groundTruth, overlayExists, spectrSigName, 
+buildClassMod <- function(rawdir, image, groundTruth,
+                          groundTruthValues,
+                          overlayExists, spectrSigName, 
                           modelName, nCores, mtryGrd, ntreeGrd,
                           nfolds, nodesize, cvrepeats){
   
@@ -39,6 +41,10 @@ buildClassMod <- function(rawdir, image, groundTruth, overlayExists, spectrSigNa
   cat('\nloading spatial data...')
   img <- raster::brick(image)
   ground <- raster::shapefile(groundTruth)
+  
+  ground@data$cover <- kwb.utils::multiSubstitute(
+    ground@data$cover, groundTruthValues)
+  
   cat('\ndone\n')
   
   if(overlayExists){
@@ -120,7 +126,7 @@ predictSurfClass <- function(rawdir, modelName, image, predName){
   # load image to be classified
   img <- raster::brick(image)
   
-  # predict
+    # predict
   cat('\nmaking predictions...')
   pred <- raster::predict(object=img, 
                           model=model$finalModel, 

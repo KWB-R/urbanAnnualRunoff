@@ -17,55 +17,79 @@
 # step 0: load scripts
 source('imgClass.R')
 source('abimo.R')
+source('climate.R')
+
+`%>%` <- magrittr::`%>%` 
+
+path_list <- list(
+  root_path = "//medusa/projekte$/WWT_Department/Projects/KEYS/Data-Work packages",
+  site = "Beijing",
+  data = "WP2_SUW_pollution_<site>",
+  abimo = "<root_path>/<data>/_DataAnalysis/ABIMO",
+  gis = "<root_path>/<data>/_DataAnalysis/GIS",
+  climate = "<root_path>/<data>/_DataAnalysis/climate"
+)
+
+paths <- kwb.utils::resolve(path_list)
+#kwb.utils::resolve(path_list, site = "Jinxi")
 
 # step 1: build classification model
-buildClassMod(rawdir='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS',
-              image='tz.tif',
-              groundTruth='groundtruth2.shp', # column name of surface type in groundTruth must be 'cover'
-              spectrSigName='spectrSigTz.Rdata',
-              modelName='rForestTz.Rdata',
-              overlayExists=TRUE,
-              nCores=1,
-              mtryGrd=1:3, ntreeGrd=seq(80, 150, by=10),
-              nfolds=3, nodesize=1, cvrepeats=2)
+buildClassMod(rawdir = paths$gis,
+              image = 'tz.tif',
+              groundTruth = 'groundtruth2.shp', # column name of surface type in groundTruth must be 'cover'
+              groundTruthValues = list('roof' = 1, 
+                                       'street' = 2,
+                                       'pervious' = 3,
+                                       'shadow' = 4,
+                                       'water' = 5),
+              spectrSigName = 'spectrSigTz.Rdata',
+              modelName = 'rForestTz.Rdata',
+              overlayExists = FALSE,
+              nCores = 1,
+              mtryGrd = 1:3, ntreeGrd=seq(80, 150, by=10),
+              nfolds = 3, nodesize = 1, cvrepeats = 2)
 
 # check model performance
-load('Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS/rForestTz.Rdata')
+load(file.path(paths$gis,"rForestTz.Rdata"))
 caret::confusionMatrix(data=model$finalModel$predicted, 
-                       reference=model$trainingData$.outcome, mode='prec_recall')
+                       reference=model$trainingData$.outcome, 
+                       mode='prec_recall')
 
 # step 2: classify image for roofs and streets
-predictSurfClass(rawdir='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS/',
+predictSurfClass(rawdir=paths$gis,
                  modelName='rForestTz.Rdata',
                  image='tz.tif',
                  predName='tzClass.tif',
                  crsEPSG='+init=EPSG:4586')
 
 # step 3: make overlays for total impervious area, roof and street for each subcatchment
-makeOverlay(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS/',
+makeOverlay(rawdir=paths$gis,
             rasterData='tzClass.img', 
             subcatchmShape='ABIMO_TZ1.shp',
             overlayName='surfType')
 
 # step 4: compute ABIMO variables PROBAU (%roof), VG (%impervious) and STR_FLGES
 # 2=roof, 80=impervious (in another raster dataset), 4 = street Jx, 3 = street Tz
-computeABIMOvariable(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Beijing/_DataAnalysis/GIS/',
+roof <- computeABIMOvariable(rawdir=paths$gis,
                      subcatchmShape='ABIMO_TZ1.shp',
                      mask='mask.shp',
-                     rasterData='tzClass.img',
+                     rasterData='tzClass.tif',
                      overlayName='surfType',
-                     targetValue=2,
+                     targetValue=1,
                      outDFname='roofTz.txt',
-                     street=TRUE)
+                     street=FALSE)
+
+# repeat for streets and ...
+
 
 # step 5: annual climate variables ETP and rainfall
-computeABIMOclimate(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/climate/',
+computeABIMOclimate(rawdir=paths$climate,
                     fileName='prec.txt',
                     header=c('date', 'ETP'),
                     outAnnual='Rainannual.txt',
                     outSummer='Rainsummer.txt')
 
-computeABIMOclimate(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/climate/',
+computeABIMOclimate(rawdir=paths$climate,
                     fileName='ETP.txt',
                     header=c('date', 'ETP'),
                     outAnnual='ETPannual.txt',
@@ -73,13 +97,16 @@ computeABIMOclimate(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/cl
 
 # step 8: post-process ABIMO output file -> join it with input shape file for visualization
 #         in GIS
-postProcessABIMO(rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/ABIMO/',
+postProcessABIMO(rawdir=paths$abimo,
                  nameABIMOin='ABIMO_Jinxi_v1.shp',
                  nameABIMOout='ABIMO_Jinxi_v1out.dbf',
                  ABIMOjoinedName='ABIMO_Jinxi_v1outJoined.dbf')
 
 # step 6: use raw code to compute and allocate PROVGU and all other ABIMO variables
 # raw code ------------------------------------------------------------------------------
+subc <- raster::shapefile(file.path(paths$gis, 'ABIMO_TZ1.shp'), stringsAsFactors=FALSE) 
+
+subc$CODE <- do_padding(subc$CODE)
 
 # % other impervious areas = total impervious % (VG, from global data set) 
 # - %roof (PROBAU)
@@ -146,24 +173,3 @@ subc@data <- as.data.frame(apply(X=apply(X=subc@data,
 # write ABIMO input table
 raster::shapefile(x=subc, filename='../ABIMO/ABIMO_Jinxi_v1.shp', overwrite=TRUE)
 
-
-setwd('c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataHIT/')
-soil <- readxl::read_xls(path='translate_soil_data.xls',
-                         sheet = "111",
-                         skip = 1,
-                         col_names=T,
-                         na=c("","na"),
-                         trim_ws = TRUE,
-                         .name_repair = "minimal")
-
-soil$`Irrigated Conditions`
-soil$Drainage
-t(t(unique(soil$`Texture Configuration`)))
-# "轻壤" -> 'light soil'
-# "中壤" -> 'middle soil'
-# "重壤" -> 'heavy earth'
-# "砂质轻壤" -> 'sandy light soil'
-# "粘质中壤" -> 'clay medium soil'
-# "砂质中壤" -> 'sandy medium soil'
-# "砂壤" -> 'sand soil'
-# "轻粘土" -> 'light clay'

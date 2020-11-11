@@ -24,6 +24,17 @@ makeOverlay <- function(rawdir, rasterData, subcatchmShape,
   cat('\ndone\n')
 }
 
+
+do_padding <- function(string) {
+  nchi <- nchar(string)
+  nchmax <- max(nchi)
+  
+  sapply(X=string, FUN=function(a){
+    npad <- nchmax - nchar(a)
+    paste0(paste(rep(0, times=npad), collapse=''), a)
+  }, USE.NAMES=FALSE)
+}
+
 # compute ABIMO variables, either PROBAU (%roof), VG (%impervious) or STR_FLGES (street
 # area) in each subcatchment based on existing overlay
 computeABIMOvariable <- function(rawdir, subcatchmShape, rasterData,
@@ -54,12 +65,13 @@ computeABIMOvariable <- function(rawdir, subcatchmShape, rasterData,
   mask <- raster::shapefile(mask)
   
   # pad CODE in subcatchment data with zeroes
-  nchi <- nchar(subc@data$CODE)
-  nchmax <- max(nchi)
-  subc@data$CODE <- sapply(X=subc@data$CODE, FUN=function(a){
-    npad <- nchmax - nchar(a)
-    paste0(paste(rep(0, times=npad), collapse=''), a)
-  }, USE.NAMES=FALSE)
+  # nchi <- nchar(subc@data$CODE)
+  # nchmax <- max(nchi)
+  # subc@data$CODE <- sapply(X=subc@data$CODE, FUN=function(a){
+  #   npad <- nchmax - nchar(a)
+  #   paste0(paste(rep(0, times=npad), collapse=''), a)
+  # }, USE.NAMES=FALSE)
+  subc@data$CODE <- do_padding(subc@data$CODE)
   cat('\ndone\n')
   
   # grab overlay object
@@ -130,6 +142,8 @@ computeABIMOvariable <- function(rawdir, subcatchmShape, rasterData,
   cat('\nwriting output data.frame')
   write.table(out, file=outDFname, quote=FALSE, sep=';', row.names=FALSE)
   cat('\ndone\n')
+  
+  out
 }
 
 # read dbf results file, join with input shapefile and write output shapefile including
