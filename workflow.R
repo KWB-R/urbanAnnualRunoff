@@ -1,20 +1,4 @@
-# workflow:
-# step 0: load scripts
-# step 1: build random forest model for image classification and check performance
-# step 2: classify image for roofs and streets
-# step 3: make overlays for total impervious area, roof and street for each subcatchment
-# step 4: compute ABIMO variables PROBAU (%roof), VG (%impervious) and STR_FLGES
-# step 5: compute annual climatic values ETP and precipitation
-# step 6: use raw code to compute and allocate PROVGU and all other ABIMO variables
-# step 7: go to ABIMO and run (could we call it from R?)
-# step 8: post-process ABIMO output file -> join it with input shape file for visualization
-#         in GIS
-
-#rawdir='Y:/WWT_Department/Projects/KEYS/Data-Work packages/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS'
-#rawdir='c:/kwb/KEYS/WP2_SUW_pollution_Jinxi/_DataAnalysis/GIS/'
-#setwd(rawdir)
-
-# step 0: load scripts
+# load scripts
 source('imgClass.R')
 source('abimo.R')
 source('climate.R')
@@ -22,7 +6,7 @@ source('climate.R')
 `%>%` <- magrittr::`%>%` 
 
 path_list <- list(
-  root_path = "//medusa/projekte$/WWT_Department/Projects/KEYS/Data-Work packages",
+  root_path = "c:/kwb/keys",
   site = "Beijing",
   data = "WP2_SUW_pollution_<site>",
   abimo = "<root_path>/<data>/_DataAnalysis/ABIMO",
@@ -33,10 +17,16 @@ path_list <- list(
 paths <- kwb.utils::resolve(path_list)
 #kwb.utils::resolve(path_list, site = "Jinxi")
 
-# step 1: build classification model
+# load shapefile containing subcatchments ('blockteilflächen')
+abimo <- raster::shapefile(file.path(paths$gis, 'tz1shifted.shp'))
+
+# make 'CODE' field
+abimo$CODE <- paste(abimo$Name, abimo$Outlet, sep='_')
+
+# build classification model
 buildClassMod(rawdir = paths$gis,
               image = 'tz.tif',
-              groundTruth = 'groundtruth2.shp', # column name of surface type in groundTruth must be 'cover'
+              groundTruth = 'groundtruth.shp',
               groundTruthValues = list('roof' = 1, 
                                        'street' = 2,
                                        'pervious' = 3,
@@ -47,7 +37,7 @@ buildClassMod(rawdir = paths$gis,
               overlayExists = FALSE,
               nCores = 1,
               mtryGrd = 1:3, ntreeGrd=seq(80, 150, by=10),
-              nfolds = 3, nodesize = 1, cvrepeats = 2)
+              nfolds = 3, nodesize = 3, cvrepeats = 2)
 
 # check model performance
 load(file.path(paths$gis,"rForestTz.Rdata"))
@@ -55,7 +45,7 @@ caret::confusionMatrix(data=model$finalModel$predicted,
                        reference=model$trainingData$.outcome, 
                        mode='prec_recall')
 
-# step 2: classify image for roofs and streets
+# classify image for roofs and streets
 predictSurfClass(rawdir=paths$gis,
                  modelName='rForestTz.Rdata',
                  image='tz.tif',
@@ -68,7 +58,8 @@ makeOverlay(rawdir=paths$gis,
             subcatchmShape='ABIMO_TZ1.shp',
             overlayName='surfType')
 
-# step 4: compute ABIMO variables PROBAU (%roof), VG (%impervious) and STR_FLGES
+# ABIMO variabls PROBAU (%roof),
+# VG (%impervious) and STR_FLGES
 # 2=roof, 80=impervious (in another raster dataset), 4 = street Jx, 3 = street Tz
 roof <- computeABIMOvariable(rawdir=paths$gis,
                      subcatchmShape='ABIMO_TZ1.shp',
@@ -79,7 +70,8 @@ roof <- computeABIMOvariable(rawdir=paths$gis,
                      outDFname='roofTz.txt',
                      street=FALSE)
 
-# repeat for streets and ...
+# 
+street <- computeab
 
 
 # step 5: annual climate variables ETP and rainfall
