@@ -20,8 +20,11 @@ paths <- kwb.utils::resolve(path_list)
 # load shapefile containing subcatchments ('blockteilflächen')
 abimo <- raster::shapefile(file.path(paths$gis, 'tz1shifted.shp'))
 
-# make 'CODE' field
-abimo$CODE <- paste(abimo$Name, abimo$Outlet, sep='_')
+# make ABIMO 'CODE' column
+abimo@data$CODE <- paste(abimo@data$Name, abimo@data$Outlet, sep='_')
+
+# pad CODE with zeroes to match output of ABIMO
+abimo@data$CODE <- padCODE(abimo@data$CODE)
 
 # build classification model
 buildClassMod(rawdir = paths$gis,
@@ -52,27 +55,35 @@ predictSurfClass(rawdir=paths$gis,
                  predName='tzClass.tif',
                  crsEPSG='+init=EPSG:4586')
 
-# step 3: make overlays for total impervious area, roof and street for each subcatchment
-makeOverlay(rawdir=paths$gis,
-            rasterData='tzClass.img', 
-            subcatchmShape='ABIMO_TZ1.shp',
-            overlayName='surfType')
+# make overlay object (list where each element is a vector of the pixel values 
+# of the classified image for each subcatchment)
+makeOverlay(rawdir = paths$gis,
+            rasterData = 'tzClass.img',
+            subcatchmSPobject = abimo,
+            overlayName = 'surfType')
 
-# ABIMO variabls PROBAU (%roof),
-# VG (%impervious) and STR_FLGES
-# 2=roof, 80=impervious (in another raster dataset), 4 = street Jx, 3 = street Tz
-roof <- computeABIMOvariable(rawdir=paths$gis,
-                     subcatchmShape='ABIMO_TZ1.shp',
-                     mask='mask.shp',
-                     rasterData='tzClass.tif',
-                     overlayName='surfType',
-                     targetValue=1,
-                     outDFname='roofTz.txt',
-                     street=FALSE)
+# make ABIMO variable FLGES
+abimo@data$FLGES <- makeFLGES(subcatchmSPobject = abimo)
 
-# 
-street <- computeab
+# compute ABIMO variable PROBAU (%roof)
+abimo@data$PROBAU <- makePROBAU(rawdir = paths$gis,
+                           rasterData = 'tzClass.tif',
+                           overlayName = 'surfType',
+                           targetValue = 1)
 
+# compute ABIMO variable STR_FLGES (m² street area)
+abimo@data$STR_FLGES <- makeSTR_FLGES(rawdir = paths$gis,
+                                      subcatchmSPobject = abimo,
+                                      mask = 'mask.shp',
+                                      rasterData = 'tzClass.tif',
+                                      overlayName = 'surfType',
+                                      targetValue = 2)
+
+# compute ABIMO variable VG (% soil sealing)
+abimo@data$VG <- makeVG(rawdir = paths$gis,
+                        subcatchmSPobject = abimo,
+                        rasterData = 'impervProj.tif',
+                        targetValue = 80)
 
 # compute annual and summer rainfall 
 computeABIMOclimate(rawdir = paths$climate,
@@ -88,14 +99,14 @@ computeABIMOclimate(rawdir = paths$climate,
                     outAnnual = 'etp_annual.txt',
                     outSummer = 'etp_summer.txt')
 
-# step 8: post-process ABIMO output file -> join it with input shape file for visualization
-#         in GIS
+# post-process ABIMO output file -> join it with input shape file for visualization
+# in GIS
 postProcessABIMO(rawdir=paths$abimo,
                  nameABIMOin='ABIMO_Jinxi_v1.shp',
                  nameABIMOout='ABIMO_Jinxi_v1out.dbf',
                  ABIMOjoinedName='ABIMO_Jinxi_v1outJoined.dbf')
 
-# step 6: use raw code to compute and allocate PROVGU and all other ABIMO variables
+# use raw code to compute and allocate PROVGU and all other ABIMO variables
 # raw code ------------------------------------------------------------------------------
 subc <- raster::shapefile(file.path(paths$gis, 'ABIMO_TZ1.shp'), stringsAsFactors=FALSE) 
 
