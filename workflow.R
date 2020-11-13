@@ -6,7 +6,7 @@ source('climate.R')
 `%>%` <- magrittr::`%>%` 
 
 path_list <- list(
-  root_path = "C:/Users/rtatmuv/Documents/keys",
+  root_path = "C:/kwb/keys",
   site = "Beijing",
   data = "WP2_SUW_pollution_<site>",
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
@@ -44,16 +44,16 @@ buildClassMod(rawdir = paths$gis,
 
 # check model performance
 load(file.path(paths$gis,"rForestTz.Rdata"))
-caret::confusionMatrix(data=model$finalModel$predicted, 
-                       reference=model$trainingData$.outcome, 
-                       mode='prec_recall')
+caret::confusionMatrix(data = model$finalModel$predicted, 
+                       reference = model$trainingData$.outcome, 
+                       mode = 'prec_recall')
 
 # classify image for roofs and streets
-predictSurfClass(rawdir=paths$gis,
-                 modelName='rForestTz.Rdata',
-                 image='tz.tif',
-                 predName='tzClass.tif',
-                 crsEPSG='+init=EPSG:4586')
+predictSurfClass(rawdir = paths$gis,
+                 modelName = 'rForestTz.Rdata',
+                 image = 'tz.tif',
+                 predName = 'tzClass.tif',
+                 crsEPSG = '+init=EPSG:4586')
 
 # make overlay object (list where each element is a vector of the pixel values 
 # of the classified image for each subcatchment)
@@ -99,59 +99,59 @@ computeABIMOclimate(rawdir = paths$climate,
                     outAnnual = 'etp_annual.txt',
                     outSummer = 'etp_summer.txt')
 
-# post-process ABIMO output file -> join it with input shape file for visualization
-# in GIS
-postProcessABIMO(rawdir=paths$abimo,
-                 nameABIMOin='ABIMO_Jinxi_v1.shp',
-                 nameABIMOout='ABIMO_Jinxi_v1out.dbf',
-                 ABIMOjoinedName='ABIMO_Jinxi_v1outJoined.dbf')
+# post-process ABIMO output file -> join it with input shape file for 
+# visualization in GIS
+postProcessABIMO(rawdir = paths$abimo,
+                 nameABIMOin = 'ABIMO_Jinxi_v1.shp',
+                 nameABIMOout = 'ABIMO_Jinxi_v1out.dbf',
+                 ABIMOjoinedName = 'ABIMO_Jinxi_v1outJoined.dbf')
 
 # use raw code to compute and allocate PROVGU and all other ABIMO variables
 # raw code ------------------------------------------------------------------------------
-subc <- raster::shapefile(file.path(paths$gis, 'ABIMO_TZ1.shp'), stringsAsFactors=FALSE) 
 
-subc$CODE <- do_padding(subc$CODE)
+abimo@data$CODE <- do_padding(abimo@data$CODE)
 
-# % other impervious areas = total impervious % (VG, from global data set) 
-# - %roof (PROBAU)
-subc@data$PROVGU <- ifelse((subc@data$VG - subc@data$PROBAU) > 0,
-                           subc@data$VG - subc@data$PROBAU,
+# % other impervious areas = total impervious % (VG, from global data 
+# set) - %roof (PROBAU)
+abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
+                            abimo@data$VG - abimo@data$PROBAU,
                            0)
 
 # % imperviousness streets
-subc@data$VGSTRASSE <- 100
+abimo@data$VGSTRASSE <- 100
 
 # %cover types in other imperv. areas (PROVGU)
-subc@data$BELAG1 <- 100
-subc@data$BELAG2 <- 0
-subc@data$BELAG3 <- 0
-subc@data$BELAG4 <- 0
+abimo@data$BELAG1 <- 100
+abimo@data$BELAG2 <- 0
+abimo@data$BELAG3 <- 0
+abimo@data$BELAG4 <- 0
 
 # %cover types in street areas
-subc@data$STR_BELAG1 <- 100
-subc@data$STR_BELAG2 <- 0
-subc@data$STR_BELAG3 <- 0
-subc@data$STR_BELAG4 <- 0
+abimo@data$STR_BELAG1 <- 100
+abimo@data$STR_BELAG2 <- 0
+abimo@data$STR_BELAG3 <- 0
+abimo@data$STR_BELAG4 <- 0
 
 # identifiers
-subc@data$BEZIRK <- 1
-subc@data$STAGEB <- 1
-subc@data$BLOCK <- 1
-subc@data$TEILBLOCK <- 1
-subc@data$NUTZUNG <- 21
-subc@data$TYP <- 21
+abimo@data$BEZIRK <- 1
+abimo@data$STAGEB <- 1
+abimo@data$BLOCK <- 1
+abimo@data$TEILBLOCK <- 1
+abimo@data$NUTZUNG <- 21
+abimo@data$TYP <- 21
 
-subc@data$REGENJA <- 800
-subc@data$REGENSO <- 500
+abimo@data$REGENJA <- 800
+abimo@data$REGENSO <- 500
 
-subc@data$KANAL<- 1
-subc@data$KAN_BEB<- 100
-subc@data$KAN_VGU<- 100
-subc@data$KAN_STR<- 100
+abimo@data$KANAL<- 1
+abimo@data$KAN_BEB<- 100
+abimo@data$KAN_VGU<- 100
+abimo@data$KAN_STR<- 100
 
-subc@data$FELD_30 <- 15
-subc@data$FELD_150 <- 15
-subc@data$FLUR <- 1
+# soil field capacity and groundwater level
+abimo@data$FELD_30 <- 15
+abimo@data$FELD_150 <- 15
+abimo@data$FLUR <- 1
 
 # select required columns and write out new shapefile
 requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 'TEILBLOCK','NUTZUNG', 'TYP',
@@ -162,10 +162,10 @@ requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 'TEILBLOCK','NUTZUNG', 'T
                   'KAN_BEB', 'KAN_VGU', 'KAN_STR',
                   'REGENJA', 'REGENSO',
                   'FELD_30', 'FELD_150', 'FLUR')
-subc@data <- subc@data[, requiredCols]
+abimo@data <- abimo@data[, requiredCols]
 
 # # change decimal separator to point
-subc@data <- as.data.frame(apply(X=apply(X=subc@data,
+abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
                                          c(1, 2),
                                          FUN=as.character),
                                  c(1, 2),
@@ -175,5 +175,5 @@ subc@data <- as.data.frame(apply(X=apply(X=subc@data,
                            stringsAsFactors = FALSE)
 
 # write ABIMO input table
-raster::shapefile(x=subc, filename='../ABIMO/ABIMO_Jinxi_v1.shp', overwrite=TRUE)
+raster::shapefile(x=abimo, filename='../ABIMO/ABIMO_Jinxi_v1.shp', overwrite=TRUE)
 

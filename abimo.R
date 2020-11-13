@@ -117,8 +117,8 @@ makeSTR_FLGES <- function(rawdir, subcatchmSPobject, rasterData,
   return(STR_FLGES)
 }
 
-# compute ABIMO variable VG (% soil sealing), based on online global land use data set
-# from tsinghua univ. http://data.ess.tsinghua.edu.cn/fromglc10_2017v01.html
+# compute ABIMO variable VG (% soil sealing), based on online global land use data
+# set from tsinghua univ. http://data.ess.tsinghua.edu.cn/fromglc10_2017v01.html
 makeVG <- function(rawdir,
                    subcatchmSPobject,
                    rasterData,
@@ -142,15 +142,16 @@ makeVG <- function(rawdir,
   
   # compute % coverage
   vg <- 100*count/ncellsubc
-  cat('\ndone')
+  cat('\ndone\n')
   
   # return results
   return(vg)
 }
 
-# read dbf results file, join with input shapefile and write output shapefile including
-# ABIMO results
-postProcessABIMO <- function(rawdir, nameABIMOin, nameABIMOout, ABIMOjoinedName){
+# read dbf results file, join with input shapefile and write output shapefile 
+# including ABIMO results
+postProcessABIMO <- function(rawdir, nameABIMOin, 
+                             nameABIMOout, ABIMOjoinedName){
 
   library(dplyr)
   library(raster)
