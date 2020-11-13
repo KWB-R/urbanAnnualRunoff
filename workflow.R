@@ -6,16 +6,16 @@ source('climate.R')
 `%>%` <- magrittr::`%>%` 
 
 path_list <- list(
-  root_path = "c:/kwb/keys",
+  root_path = "C:/Users/rtatmuv/Documents/keys",
   site = "Beijing",
   data = "WP2_SUW_pollution_<site>",
-  abimo = "<root_path>/<data>/_DataAnalysis/ABIMO",
-  gis = "<root_path>/<data>/_DataAnalysis/GIS",
+  abimo = "<root_path>/<data>/_DataAnalysis/abimo",
+  gis = "<root_path>/<data>/_DataAnalysis/gis",
   climate = "<root_path>/<data>/_DataAnalysis/climate"
 )
 
 paths <- kwb.utils::resolve(path_list)
-#kwb.utils::resolve(path_list, site = "Jinxi")
+#paths <- kwb.utils::resolve(path_list, site = "Jinxi")
 
 # load shapefile containing subcatchments ('blockteilflächen')
 abimo <- raster::shapefile(file.path(paths$gis, 'tz1shifted.shp'))
@@ -35,7 +35,7 @@ buildClassMod(rawdir = paths$gis,
               spectrSigName = 'spectrSigTz.Rdata',
               modelName = 'rForestTz.Rdata',
               overlayExists = FALSE,
-              nCores = 1,
+              nCores = 2,
               mtryGrd = 1:3, ntreeGrd=seq(80, 150, by=10),
               nfolds = 3, nodesize = 3, cvrepeats = 2)
 
@@ -74,18 +74,19 @@ roof <- computeABIMOvariable(rawdir=paths$gis,
 street <- computeab
 
 
-# step 5: annual climate variables ETP and rainfall
-computeABIMOclimate(rawdir=paths$climate,
-                    fileName='prec.txt',
-                    header=c('date', 'ETP'),
-                    outAnnual='Rainannual.txt',
-                    outSummer='Rainsummer.txt')
+# compute annual and summer rainfall 
+computeABIMOclimate(rawdir = paths$climate,
+                    fileName ='raw_climateeng_precipitation_daily_Beijing.txt',
+                    skip = 6, sep = '', dec = '.',
+                    outAnnual = 'precipitation_annual.txt',
+                    outSummer ='precipitation_summer.txt')
 
-computeABIMOclimate(rawdir=paths$climate,
-                    fileName='ETP.txt',
-                    header=c('date', 'ETP'),
-                    outAnnual='ETPannual.txt',
-                    outSummer='ETPsummer.txt')
+# compute annual and summer ETP
+computeABIMOclimate(rawdir = paths$climate,
+                    fileName = 'raw_climateeng_etp_daily_Beijing.txt',
+                    skip = 6, sep = '', dec = '.',
+                    outAnnual = 'etp_annual.txt',
+                    outSummer = 'etp_summer.txt')
 
 # step 8: post-process ABIMO output file -> join it with input shape file for visualization
 #         in GIS

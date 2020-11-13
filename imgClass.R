@@ -34,13 +34,10 @@ buildClassMod <- function(rawdir, image, groundTruth,
   library(caret)
   library(doParallel)
   
-  # set working directory
-  setwd(rawdir)
-  
   # load image and ground truth data
   cat('\nloading spatial data...')
-  img <- raster::brick(image)
-  ground <- raster::shapefile(groundTruth)
+  img <- raster::brick(file.path(rawdir, image))
+  ground <- raster::shapefile(file.path(rawdir, groundTruth))
   
   ground@data$cover <- kwb.utils::multiSubstitute(
     ground@data$cover, groundTruthValues)
@@ -50,7 +47,7 @@ buildClassMod <- function(rawdir, image, groundTruth,
   if(overlayExists){
     
     cat('\nreading overlay object with spectral signatures of groundtruth areas...')
-    load(spectrSigName)
+    load(file.path(rawdir, spectrSigName))
     cat('\ndone\n')
     
   } else {
@@ -63,7 +60,7 @@ buildClassMod <- function(rawdir, image, groundTruth,
     # save resulting list containing overlay (ov)
     if(!is.na(spectrSigName)) 
       cat('\nsaving overlay object...')
-      save(ov, file=spectrSigName)
+      save(ov, file=file.path(rawdir, spectrSigName))
     cat('\ndone\n')
   }
   
@@ -120,11 +117,11 @@ predictSurfClass <- function(rawdir, modelName, image, predName){
   
   # load model object
   cat('\nloading model...')
-  load(modelName)
+  load(file.path(rawdir, modelName))
   cat('\ndone\n')
   
   # load image to be classified
-  img <- raster::brick(image)
+  img <- raster::brick(file.path(rawdir, image))
   
     # predict
   cat('\nmaking predictions...')
@@ -135,6 +132,6 @@ predictSurfClass <- function(rawdir, modelName, image, predName){
 
   # write predictions as raster
   cat('\nwriting output...')
-  raster::writeRaster(pred, filename=predName, overwrite=TRUE)
+  raster::writeRaster(pred, filename=file.path(rawdir, predName), overwrite=TRUE)
   cat('\ndone\n')
 }

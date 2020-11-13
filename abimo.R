@@ -9,18 +9,16 @@ makeOverlay <- function(rawdir, rasterData, subcatchmShape,
   
   library(raster)
   
-  setwd(rawdir)
-  
   # load data  
-  subc <- raster::shapefile(subcatchmShape, stringsAsFactors=FALSE)
-  surf <- raster::raster(rasterData)
+  subc <- raster::shapefile(file.path(rawdir, subcatchmShape), stringsAsFactors=FALSE)
+  surf <- raster::raster(file.path(rawdir, rasterData))
 
   cat('\noverlaying data...')
   assign(x=overlayName, value=raster::extract(x=surf, y=subc))
   names(surfType) <- subc@data[, subcatchmNamesCol]
   
   cat('\nsaving overlay...')
-  save(list=overlayName, file=paste0(overlayName, '.Rdata'))
+  save(list=overlayName, file=file.path(rawdir, paste0(overlayName, '.Rdata')))
   cat('\ndone\n')
 }
 
@@ -56,13 +54,11 @@ computeABIMOvariable <- function(rawdir, subcatchmShape, rasterData,
   
   library(raster)
   
-  setwd(rawdir)
-  
   # load data  
   cat('\nreading mask, subcatchments and raster data...')
-  subc <- raster::shapefile(subcatchmShape, stringsAsFactors=FALSE)
-  surf <- raster::raster(rasterData)
-  mask <- raster::shapefile(mask)
+  subc <- raster::shapefile(file.path(rawdir, subcatchmShape), stringsAsFactors=FALSE)
+  surf <- raster::raster(file.path(rawdir, rasterData))
+  mask <- raster::shapefile(file.path(rawdir, mask))
   
   # pad CODE in subcatchment data with zeroes
   # nchi <- nchar(subc@data$CODE)
@@ -76,7 +72,7 @@ computeABIMOvariable <- function(rawdir, subcatchmShape, rasterData,
   
   # grab overlay object
   cat('\nreading overlay object...')
-  load(paste0(overlayName, '.Rdata'))
+  load(file.path(rawdir, paste0(overlayName, '.Rdata')))
   cat('\ndone\n')
   
   # compute raster cell area
@@ -140,7 +136,7 @@ computeABIMOvariable <- function(rawdir, subcatchmShape, rasterData,
   
   # write output file
   cat('\nwriting output data.frame')
-  write.table(out, file=outDFname, quote=FALSE, sep=';', row.names=FALSE)
+  write.table(out, file=file.path(rawdir, outDFname), quote=FALSE, sep=';', row.names=FALSE)
   cat('\ndone\n')
   
   out
@@ -154,11 +150,9 @@ postProcessABIMO <- function(rawdir, nameABIMOin, nameABIMOout, ABIMOjoinedName)
   library(raster)
   library(foreign)
 
-  setwd(rawdir)
-  
   # read files
-  ABIMOin <- raster::shapefile(x=nameABIMOin, stringsAsFactors=FALSE)
-  ABIMOout <- foreign::read.dbf(file=nameABIMOout, as.is=TRUE)
+  ABIMOin <- raster::shapefile(x=file.path(rawdir, nameABIMOin), stringsAsFactors=FALSE)
+  ABIMOout <- foreign::read.dbf(file=file.path(rawdir, nameABIMOout), as.is=TRUE)
   
   # temporarily store CODE in vector and pad with zeroes to match
   codetemporary <- ABIMOin@data$CODE
@@ -190,6 +184,5 @@ postProcessABIMO <- function(rawdir, nameABIMOin, nameABIMOout, ABIMOjoinedName)
     dplyr::left_join(ABIMOout, by='CODE')
   
   # write out joined table output as shapefile
-  raster::shapefile(x=ABIMOjoined, filename=ABIMOjoinedName, overwrite=TRUE)
+  raster::shapefile(x=ABIMOjoined, filename=file.path(rawdir, ABIMOjoinedName), overwrite=TRUE)
 }
-
