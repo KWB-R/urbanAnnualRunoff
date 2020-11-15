@@ -1,4 +1,4 @@
-# load scripts
+# load scripts.
 source('imgClass.R')
 source('abimo.R')
 source('climate.R')
