@@ -1,3 +1,12 @@
+### install package dependencies
+cran_pkgs <- c("caret", "dplyr", "doParallel", "foreign", "lubridate", "raster", "remotes")
+install.packages(pkgs = cran_pkgs, repos = "https://cran.rstudio.com")
+
+remotes::install_github("kwb-r/kwb.utils")
+
+### use magrittr "pipe" operator
+`%>%` <- magrittr::`%>%`
+
 # load scripts.
 source('imgClass.R')
 source('abimo.R')

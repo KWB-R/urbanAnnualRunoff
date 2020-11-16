@@ -30,10 +30,6 @@ buildClassMod <- function(rawdir, image, groundTruth,
   #                              For nodesize, a single value (not included in grid search).
   # nfolds cvrepeats: number of folds and repeats in repeated cross validation (caret)
   
-  library(raster)
-  library(caret)
-  library(doParallel)
-  
   # load image and ground truth data
   cat('\nloading spatial data...')
   img <- raster::brick(file.path(rawdir, image))
@@ -76,8 +72,8 @@ buildClassMod <- function(rawdir, image, groundTruth,
   # parallel processing
   set.seed(1)
 
-  cl <- makePSOCKcluster(nCores)
-  registerDoParallel(cl)
+  cl <- doParallel::makePSOCKcluster(nCores)
+  doParallel::registerDoParallel(cl)
   
   train.control <- caret::trainControl(method="repeatedcv", 
                                        number=nfolds, 
@@ -97,7 +93,7 @@ buildClassMod <- function(rawdir, image, groundTruth,
                         nodesize=nodesize,
                         trControl=train.control)
   
-  stopCluster(cl)
+  doParallel::stopCluster(cl)
   cat('\ndone\n')
   
   # save model
@@ -108,9 +104,6 @@ buildClassMod <- function(rawdir, image, groundTruth,
 
 # apply model to predict surface type (roof, street, ...)
 predictSurfClass <- function(rawdir, modelName, image, predName){
-  
-  library(raster)
-  library(caret)
   
   # set working directory
   setwd(rawdir)
