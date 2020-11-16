@@ -1,5 +1,6 @@
 ### install package dependencies
-cran_pkgs <- c("caret", "dplyr", "doParallel", "foreign", "lubridate", "raster", "remotes")
+cran_pkgs <- c("caret", "dplyr", "doParallel", "foreign", "lubridate", "raster", 
+               "rgdal", "remotes")
 install.packages(pkgs = cran_pkgs, repos = "https://cran.rstudio.com")
 
 remotes::install_github("kwb-r/kwb.utils")
@@ -48,8 +49,11 @@ buildClassMod(rawdir = paths$gis,
               modelName = 'rForestTz.Rdata',
               overlayExists = FALSE,
               nCores = 2,
-              mtryGrd = 1:3, ntreeGrd=seq(80, 150, by=10),
-              nfolds = 3, nodesize = 3, cvrepeats = 2)
+              mtryGrd = 1:3, 
+              ntreeGrd=seq(80, 150, by=10),
+              nfolds = 3, 
+              nodesize = 3, 
+              cvrepeats = 2)
 
 # check model performance
 load(file.path(paths$gis,"rForestTz.Rdata"))
@@ -80,7 +84,7 @@ abimo@data$PROBAU <- makePROBAU(rawdir = paths$gis,
                            overlayName = 'surfType',
                            targetValue = 1)
 
-# compute ABIMO variable STR_FLGES (m² street area)
+# compute ABIMO variable STR_FLGES (m2 street area)
 abimo@data$STR_FLGES <- makeSTR_FLGES(rawdir = paths$gis,
                                       subcatchmSPobject = abimo,
                                       mask = 'mask.shp',
@@ -96,14 +100,16 @@ abimo@data$VG <- makeVG(rawdir = paths$gis,
 
 # compute annual and summer rainfall 
 computeABIMOclimate(rawdir = paths$climate,
-                    fileName ='raw_climateeng_precipitation_daily_Beijing.txt',
+                    fileName = sprintf('raw_climateeng_precipitation_daily_%s.txt', 
+                                       paths$site),
                     skip = 6, sep = '', dec = '.',
                     outAnnual = 'precipitation_annual.txt',
                     outSummer ='precipitation_summer.txt')
 
 # compute annual and summer ETP
 computeABIMOclimate(rawdir = paths$climate,
-                    fileName = 'raw_climateeng_etp_daily_Beijing.txt',
+                    fileName = sprintf('raw_climateeng_etp_daily_%s.txt', 
+                                       paths$site),
                     skip = 6, sep = '', dec = '.',
                     outAnnual = 'etp_annual.txt',
                     outSummer = 'etp_summer.txt')
@@ -111,9 +117,10 @@ computeABIMOclimate(rawdir = paths$climate,
 # post-process ABIMO output file -> join it with input shape file for 
 # visualization in GIS
 postProcessABIMO(rawdir = paths$abimo,
-                 nameABIMOin = 'ABIMO_Jinxi_v1.shp',
-                 nameABIMOout = 'ABIMO_Jinxi_v1out.dbf',
-                 ABIMOjoinedName = 'ABIMO_Jinxi_v1outJoined.dbf')
+                 nameABIMOin = sprintf('ABIMO_%s.shp', paths$site),
+                 nameABIMOout = sprintf('ABIMO_%s_out.dbf', paths$site),
+                 ABIMOjoinedName = sprintf('ABIMO_%s_outJoined.dbf', paths$site)
+                 )
 
 # use raw code to compute and allocate PROVGU and all other ABIMO variables
 # raw code ------------------------------------------------------------------------------
@@ -182,5 +189,7 @@ abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
                            stringsAsFactors = FALSE)
 
 # write ABIMO input table
-raster::shapefile(x=abimo, filename='../ABIMO/ABIMO_Jinxi_v1.shp', overwrite=TRUE)
+raster::shapefile(x=abimo, 
+                  filename=file.path(paths$abimo, sprintf('ABIMO_%s.shp', paths$site)),
+                  overwrite=TRUE)
 
