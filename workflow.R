@@ -109,8 +109,6 @@ postProcessABIMO(rawdir = paths$abimo,
 # use raw code to compute and allocate PROVGU and all other ABIMO variables
 # raw code ------------------------------------------------------------------------------
 
-abimo@data$CODE <- do_padding(abimo@data$CODE)
-
 # % other impervious areas = total impervious % (VG, from global data 
 # set) - %roof (PROBAU)
 abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
