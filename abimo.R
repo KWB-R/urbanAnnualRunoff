@@ -2,8 +2,6 @@
 makeOverlay <- function(rawdir, rasterData, subcatchmSPobject, 
                         overlayName, subcatchmNamesCol){
 
-  library(raster)
-  
   # load data
   surf <- raster::raster(file.path(rawdir, rasterData))
 
@@ -41,9 +39,7 @@ makeFLGES <- function(subcatchmSPobject){
 
 # compute ABIMO variable PROBAU
 makePROBAU <- function(rawdir, rasterData, overlayName, targetValue){
-  
-  library(raster)
-  
+
   # load data  
   cat('\nreading classified image...')
   surf <- raster::raster(file.path(rawdir, rasterData))
@@ -72,7 +68,6 @@ makePROBAU <- function(rawdir, rasterData, overlayName, targetValue){
 makeSTR_FLGES <- function(rawdir, subcatchmSPobject, rasterData,
                           overlayName, targetValue, mask){
   
-  library(raster)
   
   # load data  
   cat('\nreading mask and raster data...')
@@ -123,7 +118,6 @@ makeVG <- function(rawdir,
                    subcatchmSPobject,
                    rasterData,
                    targetValue){
-  library(raster)
   
   # load raster data
   cat('\nreading raster data...')
@@ -152,10 +146,6 @@ makeVG <- function(rawdir,
 # including ABIMO results
 postProcessABIMO <- function(rawdir, nameABIMOin, 
                              nameABIMOout, ABIMOjoinedName){
-
-  library(dplyr)
-  library(raster)
-  library(foreign)
 
   # read files
   ABIMOin <- raster::shapefile(x=file.path(rawdir, nameABIMOin), stringsAsFactors=FALSE)
