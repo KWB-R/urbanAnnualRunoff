@@ -1,3 +1,13 @@
+### install package dependencies
+cran_pkgs <- c("caret", "dplyr", "doParallel", "foreign", "lubridate", "raster", 
+               "rgdal", "remotes")
+install.packages(pkgs = cran_pkgs, repos = "https://cran.rstudio.com")
+
+remotes::install_github("kwb-r/kwb.utils")
+
+### use magrittr "pipe" operator
+`%>%` <- magrittr::`%>%`
+
 # load scripts.
 source('imgClass.R')
 source('abimo.R')
@@ -6,7 +16,7 @@ source('climate.R')
 `%>%` <- magrittr::`%>%` 
 
 path_list <- list(
-  root_path = "C:/kwb/keys",
+  root_path = "C:/kwb/projects/keys/Data-Work packages",
   site = "Beijing",
   data = "WP2_SUW_pollution_<site>",
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
@@ -39,8 +49,11 @@ buildClassMod(rawdir = paths$gis,
               modelName = 'rForestTz.Rdata',
               overlayExists = FALSE,
               nCores = 2,
-              mtryGrd = 1:3, ntreeGrd=seq(80, 150, by=10),
-              nfolds = 3, nodesize = 3, cvrepeats = 2)
+              mtryGrd = 1:3, 
+              ntreeGrd=seq(80, 150, by=10),
+              nfolds = 3, 
+              nodesize = 3, 
+              cvrepeats = 2)
 
 # check model performance
 load(file.path(paths$gis,"rForestTz.Rdata"))
@@ -71,7 +84,7 @@ abimo@data$PROBAU <- makePROBAU(rawdir = paths$gis,
                            overlayName = 'surfType',
                            targetValue = 1)
 
-# compute ABIMO variable STR_FLGES (m² street area)
+# compute ABIMO variable STR_FLGES (m2 street area)
 abimo@data$STR_FLGES <- makeSTR_FLGES(rawdir = paths$gis,
                                       subcatchmSPobject = abimo,
                                       mask = 'mask.shp',
@@ -100,20 +113,30 @@ abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
 # return the multiannual average annual rainfall. care must be taken to exclude
 # incomplete years from the average calculation. same for summer rainfall
 computeABIMOclimate(rawdir = paths$climate,
-                    fileName ='raw_climateeng_precipitation_daily_Beijing.txt',
+                    fileName = sprintf('raw_climateeng_precipitation_daily_%s.txt', 
+                                       paths$site),
                     skip = 6, sep = '', dec = '.',
                     outAnnual = 'precipitation_annual.txt',
                     outSummer ='precipitation_summer.txt')
 
 # compute annual and summer ETP. this goes manually into the ABIMO config file
 computeABIMOclimate(rawdir = paths$climate,
-                    fileName = 'raw_climateeng_etp_daily_Beijing.txt',
+                    fileName = sprintf('raw_climateeng_etp_daily_%s.txt', 
+                                       paths$site),
                     skip = 6, sep = '', dec = '.',
                     outAnnual = 'etp_annual.txt',
                     outSummer = 'etp_summer.txt')
 
 # use raw code to compute and assign remaining ABIMO variables manually
 # raw code ------------------------------------------------------------------------------
+
+# raw code ------------------------------------------------------------------------------
+
+# % other impervious areas = total impervious % (VG, from global data 
+# set) - %roof (PROBAU)
+abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
+                            abimo@data$VG - abimo@data$PROBAU,
+                           0)
 
 # % imperviousness streets
 abimo@data$VGSTRASSE <- 100
@@ -185,15 +208,17 @@ abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
                            stringsAsFactors = FALSE)
 
 # write ABIMO input table
-raster::shapefile(x = abimo, 
-                  filename = file.path(paths$abimo, 'abimo_beijing_v1.shp'), 
-                  overwrite = TRUE)
+abimo_inp <- sprintf('abimo_%s.shp', paths$site)
+raster::shapefile(x=abimo, 
+                  filename=file.path(paths$abimo, abimo_inp),
+                  overwrite=TRUE)
 
 
 # postprocessing ----------------------------------------------------------------
 # post-process ABIMO output file -> join it with input shape file for 
 # visualization in GIS
 postProcessABIMO(rawdir = paths$abimo,
-                 nameABIMOin = 'abimo_beijing_v1.shp',
-                 nameABIMOout = 'abimo_beijing_v1out.dbf',
-                 ABIMOjoinedName = 'abimo_beijing_v1out_joined.dbf')
+                 nameABIMOin = abimo_inp,
+                 nameABIMOout = sprintf('abimo_%s_out.dbf', paths$site),
+                 ABIMOjoinedName = sprintf('abimo_%s_out_joined.dbf', paths$site)
+                )

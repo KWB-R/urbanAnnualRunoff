@@ -7,9 +7,7 @@ computeABIMOclimate <- function(rawdir,
                                 sep,
                                 dec,
                                 outAnnual, outSummer){
-  library(lubridate)
-  library(dplyr)
-  
+
   # read data
   dat <- read.table(file.path(rawdir, fileName),
                     skip = skip,
