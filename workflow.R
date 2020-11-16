@@ -85,37 +85,35 @@ abimo@data$VG <- makeVG(rawdir = paths$gis,
                         rasterData = 'impervProj.tif',
                         targetValue = 80)
 
-# compute annual and summer rainfall 
+# compute ABIMO variable PROVGU (% other impervious areas) as 
+# PROVGU = VG - PROBAU, setting any negative values to 0. this
+# happens for only <10% of subcatchments, and results mainly from
+# differences in spatial resolution and classification differences
+# between both datasets (our classified image and the global land 
+# use dataset)
+abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
+                            abimo@data$VG - abimo@data$PROBAU,
+                            0)
+
+# compute annual and summer rainfall. 
+# *** potential enhancement: ***
+# return the multiannual average annual rainfall. care must be taken to exclude
+# incomplete years from the average calculation. same for summer rainfall
 computeABIMOclimate(rawdir = paths$climate,
                     fileName ='raw_climateeng_precipitation_daily_Beijing.txt',
                     skip = 6, sep = '', dec = '.',
                     outAnnual = 'precipitation_annual.txt',
                     outSummer ='precipitation_summer.txt')
 
-# compute annual and summer ETP
+# compute annual and summer ETP. this goes manually into the ABIMO config file
 computeABIMOclimate(rawdir = paths$climate,
                     fileName = 'raw_climateeng_etp_daily_Beijing.txt',
                     skip = 6, sep = '', dec = '.',
                     outAnnual = 'etp_annual.txt',
                     outSummer = 'etp_summer.txt')
 
-# post-process ABIMO output file -> join it with input shape file for 
-# visualization in GIS
-postProcessABIMO(rawdir = paths$abimo,
-                 nameABIMOin = 'ABIMO_Jinxi_v1.shp',
-                 nameABIMOout = 'ABIMO_Jinxi_v1out.dbf',
-                 ABIMOjoinedName = 'ABIMO_Jinxi_v1outJoined.dbf')
-
-# use raw code to compute and allocate PROVGU and all other ABIMO variables
+# use raw code to compute and assign remaining ABIMO variables manually
 # raw code ------------------------------------------------------------------------------
-
-abimo@data$CODE <- do_padding(abimo@data$CODE)
-
-# % other impervious areas = total impervious % (VG, from global data 
-# set) - %roof (PROBAU)
-abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
-                            abimo@data$VG - abimo@data$PROBAU,
-                           0)
 
 # % imperviousness streets
 abimo@data$VGSTRASSE <- 100
@@ -138,23 +136,28 @@ abimo@data$STAGEB <- 1
 abimo@data$BLOCK <- 1
 abimo@data$TEILBLOCK <- 1
 abimo@data$NUTZUNG <- 21
-abimo@data$TYP <- 21
+abimo@data$TYP <- 38
 
-abimo@data$REGENJA <- 800
-abimo@data$REGENSO <- 500
+# annual rainfall (this can be automatized by making 'computeABIMOclimate'
+# return the multiannual average annual rainfall. care must be taken to exclude
+# incomplete years from the average calculation)
+abimo@data$REGENJA <- 538
+abimo@data$REGENSO <- 395
 
+# channelization degrees. these are set manually since there is no data
 abimo@data$KANAL<- 1
 abimo@data$KAN_BEB<- 100
 abimo@data$KAN_VGU<- 100
 abimo@data$KAN_STR<- 100
 
 # soil field capacity and groundwater level
-abimo@data$FELD_30 <- 15
-abimo@data$FELD_150 <- 15
-abimo@data$FLUR <- 1
+abimo@data$FELD_30 <- 30
+abimo@data$FELD_150 <- 30
+abimo@data$FLUR <- 10
 
 # select required columns and write out new shapefile
-requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 'TEILBLOCK','NUTZUNG', 'TYP',
+requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 'TEILBLOCK',
+                  'NUTZUNG', 'TYP',
                   'FLGES', 'STR_FLGES',
                   'PROBAU', 'PROVGU', 'VGSTRASSE',
                   'BELAG1', 'BELAG2', 'BELAG3', 'BELAG4',
@@ -164,7 +167,14 @@ requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 'TEILBLOCK','NUTZUNG', 'T
                   'FELD_30', 'FELD_150', 'FLUR')
 abimo@data <- abimo@data[, requiredCols]
 
-# # change decimal separator to point
+# format numbers to 1 decimal place and change decimal separator to comma
+# (ABIMO does not run correctly otherwise)
+abimo@data[, 8:ncol(abimo@data)] <- round(
+  abimo@data[, 8:ncol(abimo@data)],
+  digits = 0)
+
+apply(X = abimo@data['FLGES'], FUN = nchar, MARGIN = 2)
+
 abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
                                          c(1, 2),
                                          FUN=as.character),
@@ -175,5 +185,15 @@ abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
                            stringsAsFactors = FALSE)
 
 # write ABIMO input table
-raster::shapefile(x=abimo, filename='../ABIMO/ABIMO_Jinxi_v1.shp', overwrite=TRUE)
+raster::shapefile(x = abimo, 
+                  filename = file.path(paths$abimo, 'abimo_beijing_v1.shp'), 
+                  overwrite = TRUE)
 
+
+# postprocessing ----------------------------------------------------------------
+# post-process ABIMO output file -> join it with input shape file for 
+# visualization in GIS
+postProcessABIMO(rawdir = paths$abimo,
+                 nameABIMOin = 'abimo_beijing_v1.shp',
+                 nameABIMOout = 'abimo_beijing_v1out.dbf',
+                 ABIMOjoinedName = 'abimo_beijing_v1out_joined.dbf')
