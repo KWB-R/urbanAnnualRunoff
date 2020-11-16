@@ -6,7 +6,7 @@ source('climate.R')
 `%>%` <- magrittr::`%>%` 
 
 path_list <- list(
-  root_path = "C:/kwb/keys",
+  root_path = "C:/kwb/projects/keys/Data-Work packages",
   site = "Beijing",
   data = "WP2_SUW_pollution_<site>",
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
