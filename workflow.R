@@ -1,6 +1,21 @@
+### prerequisites (64bit R)
+if(Sys.getenv("R_ARCH") != "/x64") {
+  stop("Spatial operations need a lot of RAM. Use of 64bit R is required. 
+  
+Workflow in RStudio:  
+1. Go to 'Tools' (top pane)
+2. Select 'Global Options' 
+3. Select 'General' 
+4. Under 'R Sessions' select 'Change' 
+5. Select 'Use the machine`s default R version of R64 (64-bit)'
+6. Close all R Studio sessions  
+7. Restart R Studio"
+)
+} else {
+
 ### install package dependencies
-cran_pkgs <- c("caret", "dplyr", "doParallel", "foreign", "lubridate", "raster", 
-               "rgdal", "remotes")
+cran_pkgs <- c("caret", "dplyr", "doParallel", "foreign", "fs", "lubridate", 
+               "randomForest", "raster", "rgdal", "remotes")
 install.packages(pkgs = cran_pkgs, repos = "https://cran.rstudio.com")
 
 remotes::install_github("kwb-r/kwb.utils")
@@ -20,6 +35,7 @@ path_list <- list(
   site = "Beijing",
   data = "WP2_SUW_pollution_<site>",
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
+  abimo_exe = "<abimo>/Abimo3.2/Abimo3.2/Abimo3_2.exe",
   gis = "<root_path>/<data>/_DataAnalysis/gis",
   climate = "<root_path>/<data>/_DataAnalysis/climate"
 )
@@ -209,16 +225,35 @@ abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
 
 # write ABIMO input table
 abimo_inp <- sprintf('abimo_%s.shp', paths$site)
+abimo_inp_path <- file.path(paths$abimo, abimo_inp)
 raster::shapefile(x=abimo, 
-                  filename=file.path(paths$abimo, abimo_inp),
+                  filename=abimo_inp_path,
                   overwrite=TRUE)
 
+
+# run ABIMO manually in GUI ----------------------------------------------------
+abimo_out <- sprintf('abimo_%s_out.dbf', paths$site)
+if(!fs::file_exists(paths$abimo_exe)) {
+  stop(cat(sprintf("ABIMO executale does not exist: %s
+Please copy to this location", paths$abimo_exe)))
+} else {
+message(cat(sprintf("Run ABIMO executable manually:
+1. Select input file: \"%s\"
+2. Save it under: \"%s\"", 
+                    abimo_inp_path, 
+                    abimo_out))
+)
+      
+kwb.utils::hsOpenWindowsExplorer(paths$abimo_exe)
 
 # postprocessing ----------------------------------------------------------------
 # post-process ABIMO output file -> join it with input shape file for 
 # visualization in GIS
 postProcessABIMO(rawdir = paths$abimo,
                  nameABIMOin = abimo_inp,
-                 nameABIMOout = sprintf('abimo_%s_out.dbf', paths$site),
-                 ABIMOjoinedName = sprintf('abimo_%s_out_joined.dbf', paths$site)
+                 nameABIMOout = abimo_out,
+                 ABIMOjoinedName = sprintf("%s_joined.dbf", abimo_out)
                 )
+}
+
+}
