@@ -1,11 +1,73 @@
 # image segmentation with random forest based on spectral signatures
 
-# build image classification model. overlay object is named 'ov'
-buildClassMod <- function(rawdir, image, groundTruth,
-                          groundTruthValues,
-                          overlayExists, spectrSigName, 
-                          modelName, nCores, mtryGrd, ntreeGrd,
-                          nfolds, nodesize, cvrepeats){
+#' build image classification model (random forest)
+#' @description Wrapper function for fitting a random forest using a multi-band 
+#' image with the purpose of classifying pixels into roof, street, and pervious 
+#' (green areas, water surface), etc. These categories are defined by the user 
+#' in the ground truth data. Training and testing are done using repeated 
+#' cross-validation with package caret
+#' @param rawdir path to directory containing the image to be classified and the 
+#' ground truth data.
+#' @param image The image to be classified. Supported formats are given in the 
+#' raster package's brick function.
+#' @param groundTruth shapefile containing polygons indicating the observed 
+#' classes of a sample of pixels. These classes must be contained in a column 
+#' named 'cover' in the shape-file's attribute table. The table may contain 
+#' further columns.
+#' @param groundTruthValues list with key value pairs (default: list('roof' = 1, 
+#' 'street' = 2, 'pervious' = 3, 'shadow' = 4, 'water' = 5))
+#' @param overlayExists if FALSE, the function overlays the ground truth data 
+#' and the image (time consuming) and saves an R object containing the former's 
+#' spectral signatures with name spectrSigName (overlay object). If TRUE, the 
+#' function will skip this overlay operation and read an existing overlay object 
+#' with name 'spectrSigName'.(default: FALSE)
+#' @param spectrSigName File name of overlay object, either for saving a new or 
+#' load an existing file.
+#' @param modelName File name for saving the fitted random forest model
+#' @param nCores  no. of cores for running in parallel mode (uses library 
+#' 'doParallel')
+#' @param mtryGrd Number of trees to grow. In the random forests literature, this 
+#' is referred to as the ntree parameter. Larger number of trees produce more 
+#' stable models and covariate importance estimates, but require more memory and 
+#' a longer run time. For small datasets, 50 trees may be sufficient. For larger 
+#' datasets, 500 or more may be required. Please consult the random forests 
+#' literature for extensive discussion of this parameter (e.g. Cutler et al., 2007; 
+#' Strobl et al., 2007; Strobl et al., 2008).
+#' @param ntreeGrd Number of variables available for splitting at each tree node. 
+#' In the random forests literature, this is referred to as the mtry parameter.
+#' There is extensive discussion in the literature about the influence of mtry. 
+#' Cutler et al. (2007) reported that different values of mtry did not affect 
+#' the correct classification rates of their model and that other performance 
+#' metrics (sensitivity, specificity, kappa, and ROC AUC) were stable under 
+#' different values of mtry. On the other hand, Strobl et al. (2008) reported 
+#' that mtry had a strong influence on predictor variable importance estimates. 
+#' @param nfolds number of folds in repeated cross validation (caret), 
+#' (default: 3)
+#' @param nodesize a single value (not included in grid search), (default: 3)
+#' @param cvrepeats number of repeats in repeated cross validation (caret),
+#' (default: 2)
+#'
+#' @return writes a lot of output files to different folders ??? (details!)
+#' @export
+#'
+#' @examples
+buildClassMod <- function(rawdir, 
+                          image, 
+                          groundTruth,
+                          groundTruthValues = list('roof' = 1, 
+                                                   'street' = 2,
+                                                   'pervious' = 3,
+                                                   'shadow' = 4,
+                                                   'water' = 5),
+                          overlayExists = FALSE, 
+                          spectrSigName, 
+                          modelName, 
+                          nCores, 
+                          mtryGrd, 
+                          ntreeGrd,
+                          nfolds = 3, 
+                          nodesize = 3, 
+                          cvrepeats = 2){
   
   # Wrapper function for fitting a random forest using a multi-band image with the purpose of
   # classifying pixels into roof, street, and pervious (green areas, water surface), etc. These 
