@@ -68,30 +68,7 @@ buildClassMod <- function(rawdir,
                           nfolds = 3, 
                           nodesize = 3, 
                           cvrepeats = 2){
-  
-  # Wrapper function for fitting a random forest using a multi-band image with the purpose of
-  # classifying pixels into roof, street, and pervious (green areas, water surface), etc. These 
-  # categories are defined by the user in the ground truth data.
-  # 
-  # Training and testing are done using repeated cross-validation with package caret
-  # 
-  # rawdir: path to directory containing the image to be classified and the ground truth data.
-  # image: The image to be classified. Supported formats are given in the raster package's brick
-  #        function.
-  # groundTruth: shapefile containing polygons indicating the observed classes of a sample of 
-  #              pixels. These classes must be contained in a column named 'cover' in the shape-
-  #              file's attribute table. The table may contain further columns.
-  # overlayExists: if FALSE, the function overlays the ground truth data and the image (time 
-  #                consuming) and saves an R object containing the former's spectral signatures
-  #                with name spectrSigName (overlay object). If TRUE, the function will skip this
-  #                overlay operation and read an existing overlay object with name 'spectrSigName'.
-  # spectrSigName: File name of overlay object, either for saving a new or load an existing file.
-  # modelName: File name for saving the fitted random forest model
-  # nCores: no. of cores for running in parallel mode (uses library 'doParallel')
-  # mtryGrd, ntreeGrd, nodesize: grids for randomForest::randomForest parameters mtry and ntree.
-  #                              For nodesize, a single value (not included in grid search).
-  # nfolds cvrepeats: number of folds and repeats in repeated cross validation (caret)
-  
+   
   # load image and ground truth data
   cat('\nloading spatial data...')
   img <- raster::brick(file.path(rawdir, image))
