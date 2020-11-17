@@ -72,7 +72,7 @@ buildClassMod <- function(rawdir, image, groundTruth,
   # parallel processing
   set.seed(1)
 
-  cl <- doParallel::makePSOCKcluster(nCores)
+  cl <- parallel::makePSOCKcluster(nCores)
   doParallel::registerDoParallel(cl)
   
   train.control <- caret::trainControl(method="repeatedcv", 
@@ -93,7 +93,7 @@ buildClassMod <- function(rawdir, image, groundTruth,
                         nodesize=nodesize,
                         trControl=train.control)
   
-  doParallel::stopCluster(cl)
+  parallel::stopCluster(cl)
   cat('\ndone\n')
   
   # save model
