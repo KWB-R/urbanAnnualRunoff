@@ -30,7 +30,9 @@ Imports:
     remotes,
     magrittr
 Suggests: 
-    covr
+    covr,
+    knitr,
+    rmarkdown
 VignetteBuilder: 
     knitr
 Remotes: 
