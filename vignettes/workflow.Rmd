@@ -1,3 +1,20 @@
+---
+title: "Workflow"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r workflow eval=FALSE}
 ### prerequisites (64bit R)
 if(Sys.getenv("R_ARCH") != "/x64") {
   stop("Spatial operations need a lot of RAM. Use of 64bit R is required. 
@@ -13,22 +30,6 @@ Workflow in RStudio:
 )
 } else {
 
-### install package dependencies
-cran_pkgs <- c("caret", "dplyr", "doParallel", "foreign", "fs", "lubridate", 
-               "randomForest", "raster", "rgdal", "remotes")
-install.packages(pkgs = cran_pkgs, repos = "https://cran.rstudio.com")
-
-remotes::install_github("kwb-r/kwb.utils")
-
-### use magrittr "pipe" operator
-`%>%` <- magrittr::`%>%`
-
-# load scripts.
-source('R/imgClass.R')
-source('R/abimo.R')
-source('R/climate.R')
-
-`%>%` <- magrittr::`%>%` 
 
 path_list <- list(
   root_path = "C:/kwb/projects/keys/Data-Work packages",
@@ -55,7 +56,7 @@ abimo@data$CODE <- padCODE(abimo@data$CODE)
 
 
 # build classification model
-buildClassMod(rawdir = paths$gis,
+urbanAnnualRunoff::buildClassMod(rawdir = paths$gis,
               image = 'tz.tif',
               groundTruth = 'groundtruth2.shp',
               groundTruthValues = list('roof' = 1, 
@@ -80,7 +81,7 @@ caret::confusionMatrix(data = model$finalModel$predicted,
                        mode = 'prec_recall')
 
 # classify image for roofs and streets
-predictSurfClass(rawdir = paths$gis,
+urbanAnnualRunoff::predictSurfClass(rawdir = paths$gis,
                  modelName = 'rForestTz.Rdata',
                  image = 'tz.tif',
                  predName = 'tzClass.tif',
@@ -88,22 +89,22 @@ predictSurfClass(rawdir = paths$gis,
 
 # make overlay object (list where each element is a vector of the pixel values 
 # of the classified image for each subcatchment)
-makeOverlay(rawdir = paths$gis,
+urbanAnnualRunoff::makeOverlay(rawdir = paths$gis,
             rasterData = 'tzClass.img',
             subcatchmSPobject = abimo,
             overlayName = 'surfType')
 
 # make ABIMO variable FLGES
-abimo@data$FLGES <- makeFLGES(subcatchmSPobject = abimo)
+abimo@data$FLGES <- urbanAnnualRunoff::makeFLGES(subcatchmSPobject = abimo)
 
 # compute ABIMO variable PROBAU (%roof)
-abimo@data$PROBAU <- makePROBAU(rawdir = paths$gis,
+abimo@data$PROBAU <- urbanAnnualRunoff::makePROBAU(rawdir = paths$gis,
                            rasterData = 'tzClass.tif',
                            overlayName = 'surfType',
                            targetValue = 1)
 
 # compute ABIMO variable STR_FLGES (m2 street area)
-abimo@data$STR_FLGES <- makeSTR_FLGES(rawdir = paths$gis,
+abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(rawdir = paths$gis,
                                       subcatchmSPobject = abimo,
                                       mask = 'mask.shp',
                                       rasterData = 'tzClass.tif',
@@ -111,7 +112,7 @@ abimo@data$STR_FLGES <- makeSTR_FLGES(rawdir = paths$gis,
                                       targetValue = 2)
 
 # compute ABIMO variable VG (% soil sealing)
-abimo@data$VG <- makeVG(rawdir = paths$gis,
+abimo@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
                         subcatchmSPobject = abimo,
                         rasterData = 'impervProj.tif',
                         targetValue = 80)
@@ -130,7 +131,7 @@ abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
 # *** potential enhancement: ***
 # return the multiannual average annual rainfall. care must be taken to exclude
 # incomplete years from the average calculation. same for summer rainfall
-computeABIMOclimate(rawdir = paths$climate,
+urbanAnnualRunoff::computeABIMOclimate(rawdir = paths$climate,
                     fileName = sprintf('raw_climateeng_precipitation_daily_%s.txt', 
                                        paths$site),
                     skip = 6, sep = '', dec = '.',
@@ -138,7 +139,7 @@ computeABIMOclimate(rawdir = paths$climate,
                     outSummer ='precipitation_summer.txt')
 
 # compute annual and summer ETP. this goes manually into the ABIMO config file
-computeABIMOclimate(rawdir = paths$climate,
+urbanAnnualRunoff::computeABIMOclimate(rawdir = paths$climate,
                     fileName = sprintf('raw_climateeng_etp_daily_%s.txt', 
                                        paths$site),
                     skip = 6, sep = '', dec = '.',
@@ -251,7 +252,7 @@ kwb.utils::hsOpenWindowsExplorer(paths$abimo_exe)
 # postprocessing ----------------------------------------------------------------
 # post-process ABIMO output file -> join it with input shape file for 
 # visualization in GIS
-postProcessABIMO(rawdir = paths$abimo,
+urbanAnnualRunoff::postProcessABIMO(rawdir = paths$abimo,
                  nameABIMOin = abimo_inp,
                  nameABIMOout = abimo_out,
                  ABIMOjoinedName = sprintf("%s_joined.dbf", abimo_out)
@@ -259,3 +260,6 @@ postProcessABIMO(rawdir = paths$abimo,
 }
 
 }
+
+
+```
