@@ -1,0 +1,41 @@
+Package: urbanAnnualRunoff
+Title: R Package for Deriving Urban Surfaces for Storm Runoff
+    Analysis
+Version: 0.0.0.9000
+Authors@R: 
+    c(person(given = "Roberto",
+             family = "Tatis-Muvdi",
+             role = c("aut", "cre"),
+             email = "roberto.tatis-muvdi@kompetenz-wasser.de",
+             comment = c(ORCID = "0000-0003-0490-7999")),
+      person(given = "Kompetenzzentrum Wasser Berlin gGmbH (KWB)",
+             role = "cph"))
+Description: Used in Project KEYS for generating inputs to
+    runoff model ABIMO for application in cities with data scarcity.
+License: MIT + file LICENSE
+URL: https://github.com/KWB-R/urbanAnnualRunoff
+BugReports: https://github.com/KWB-R/urbanAnnualRunoff/issues
+Imports: 
+    caret,
+    dplyr,
+    doParallel,
+    foreign,
+    fs,
+    kwb.utils,
+    lubridate,
+    randomForest,
+    raster,
+    rlang,
+    rgdal,
+    remotes,
+    magrittr
+Suggests: 
+    covr
+VignetteBuilder: 
+    knitr
+Remotes: 
+    github::kwb-r/kwb.utils
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
