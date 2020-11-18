@@ -1,12 +1,14 @@
 [![Appveyor build Status](https://ci.appveyor.com/api/projects/status/github/KWB-R/urbanAnnualRunoff?branch=main&svg=true)](https://ci.appveyor.com/project/KWB-R/urbanAnnualRunoff/branch/main)
-[![Travis build Status](https://travis-ci.com/KWB-R/urbanAnnualRunoff.svg?branch=main)](https://travis-ci.com/KWB-R/urbanAnnualRunoff)
+[![R-CMD-check](https://github.com/KWB-R/urbanAnnualRunoff/workflows/R-CMD-check/badge.svg)](https://github.com/KWB-R/urbanAnnualRunoff/actions?query=workflow%3AR-CMD-check)
+[![pkgdown](https://github.com/KWB-R/urbanAnnualRunoff/workflows/pkgdown/badge.svg)](https://github.com/KWB-R/urbanAnnualRunoff/actions?query=workflow%3Apkgdown)
 [![codecov](https://codecov.io/github/KWB-R/urbanAnnualRunoff/branch/main/graphs/badge.svg)](https://codecov.io/github/KWB-R/urbanAnnualRunoff)
 [![Project Status](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/urbanAnnualRunoff)]()
 
 # urbanAnnualRunoff
 
-Used in Project KEYS for generating inputs to
+R Package for deriving urban surfaces for storm runoff analysis. 
+Used in project KEYS for generating inputs to
 runoff model ABIMO for application in cities with data scarcity
 
 ## Installation
