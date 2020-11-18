@@ -52,10 +52,12 @@ abimo@data$CODE <- paste(abimo@data$Name, abimo@data$Outlet, sep='_')
 # pad CODE with zeroes to match output of ABIMO
 abimo@data$CODE <- padCODE(abimo@data$CODE)
 
+
+
 # build classification model
 buildClassMod(rawdir = paths$gis,
               image = 'tz.tif',
-              groundTruth = 'groundtruth.shp',
+              groundTruth = 'groundtruth2.shp',
               groundTruthValues = list('roof' = 1, 
                                        'street' = 2,
                                        'pervious' = 3,
@@ -64,7 +66,7 @@ buildClassMod(rawdir = paths$gis,
               spectrSigName = 'spectrSigTz.Rdata',
               modelName = 'rForestTz.Rdata',
               overlayExists = FALSE,
-              nCores = 2,
+              nCores = parallel::detectCores() - 1,
               mtryGrd = 1:3, 
               ntreeGrd=seq(80, 150, by=10),
               nfolds = 3, 
