@@ -24,9 +24,9 @@ remotes::install_github("kwb-r/kwb.utils")
 `%>%` <- magrittr::`%>%`
 
 # load scripts.
-source('imgClass.R')
-source('abimo.R')
-source('climate.R')
+source('R/imgClass.R')
+source('R/abimo.R')
+source('R/climate.R')
 
 `%>%` <- magrittr::`%>%` 
 

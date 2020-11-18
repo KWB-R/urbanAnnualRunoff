@@ -1,4 +1,16 @@
-# spatial overlay of subcatchments and raster holding information required by ABIMO
+#' spatial overlay of subcatchments and raster holding information required by ABIMO
+#' 
+#' @param rawdir rawdir
+#' @param rasterData rasterData 
+#' @param subcatchmSPobject subcatchmSPobject  
+#' @param overlayName overlayName
+#' @param subcatchmNamesCol subcatchmNamesCol
+#'
+#' @return save overlay as .Rdata in directory "rawdir" with filename defined in 
+#' parameter "overlayName"
+#' @export
+#'
+#' @importFrom raster extract raster
 makeOverlay <- function(rawdir, rasterData, subcatchmSPobject, 
                         overlayName, subcatchmNamesCol){
 
@@ -14,7 +26,15 @@ makeOverlay <- function(rawdir, rasterData, subcatchmSPobject,
   cat('\ndone\n')
 }
 
-# pad CODE column of ABIMO table
+
+#' helper function: pad CODE column of ABIMO table
+#'
+#' @param string string with CODE identifier
+#'
+#' @return padded CODE identifier (with leading "0" depending of maximium character 
+#' length)
+#' @export
+
 padCODE <- function(string) {
   nchi <- nchar(string)
   nchmax <- max(nchi)
@@ -27,7 +47,13 @@ padCODE <- function(string) {
   )
 }
 
-# compute ABIMO variable FLGES
+#' compute ABIMO variable FLGES
+#'
+#' @param subcatchmSPobject subcatchmSPobject
+#'
+#' @return ???
+#' @export
+#'
 makeFLGES <- function(subcatchmSPobject){
   
   sapply(
@@ -37,7 +63,17 @@ makeFLGES <- function(subcatchmSPobject){
     })
 }
 
-# compute ABIMO variable PROBAU
+#' compute ABIMO variable PROBAU
+#'
+#' @param rawdir rawdir 
+#' @param rasterData rasterData
+#' @param overlayName overlayName 
+#' @param targetValue targetValue 
+#'
+#' @return ???
+#' @export
+#'
+#' @importFrom raster raster res
 makePROBAU <- function(rawdir, rasterData, overlayName, targetValue){
 
   # load data  
@@ -64,7 +100,20 @@ makePROBAU <- function(rawdir, rasterData, overlayName, targetValue){
   return(res)
 }
 
-# compute ABIMO variable STR_FLGES
+
+#' compute ABIMO variable STR_FLGES
+#'
+#' @param rawdir rawdir
+#' @param subcatchmSPobject subcatchmSPobject 
+#' @param rasterData rasterData 
+#' @param overlayName overlayName
+#' @param targetValue targetValue 
+#' @param mask mask
+#'
+#' @return STR_FLGES
+#' @export
+#'
+#' @importFrom  raster mask shapefile raster res
 makeSTR_FLGES <- function(rawdir, subcatchmSPobject, rasterData,
                           overlayName, targetValue, mask){
   
@@ -112,8 +161,19 @@ makeSTR_FLGES <- function(rawdir, subcatchmSPobject, rasterData,
   return(STR_FLGES)
 }
 
-# compute ABIMO variable VG (% soil sealing), based on online global land use data
+
+#' compute ABIMO variable VG (% soil sealing)
+#' @description based on online global land use data
 # set from tsinghua univ. http://data.ess.tsinghua.edu.cn/fromglc10_2017v01.html
+#' @param rawdir rawdir
+#' @param subcatchmSPobject subcatchmSPobject 
+#' @param rasterData rasterData
+#' @param targetValue targetValue 
+#'
+#' @return ???
+#' @export
+#'
+#' @importFrom raster extract 
 makeVG <- function(rawdir,
                    subcatchmSPobject,
                    rasterData,
@@ -144,6 +204,21 @@ makeVG <- function(rawdir,
 
 # read dbf results file, join with input shapefile and write output shapefile 
 # including ABIMO results
+#' abimo: postprocess
+#' @description read dbf results file, join with input shapefile and write 
+#' output shapefile including ABIMO results
+#' @param rawdir rawdir 
+#' @param nameABIMOin nameABIMOin 
+#' @param nameABIMOout nameABIMOout
+#' @param ABIMOjoinedName ABIMOjoinedName 
+#' @return write shapefile with name "ABIMOjoinedName" to "rawdir" 
+#' @export
+#'
+#' @importFrom foreign read.dbf
+#' @importFrom raster shapefile
+#' @importFrom dplyr left_join
+#' @importFrom magrittr "%>%"
+#' 
 postProcessABIMO <- function(rawdir, nameABIMOin, 
                              nameABIMOout, ABIMOjoinedName){
 
