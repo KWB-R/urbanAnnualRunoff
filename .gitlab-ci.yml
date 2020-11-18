@@ -1,0 +1,25 @@
+################################################################################
+### generated-with:
+###   type: R-package
+###   name: kwb.pkgbuild
+###   version: 0.1.5
+###   installed-from: Github (kwb-r/kwb.pkgbuild@d34caef)
+###   installed-on: '2020-10-09'
+### generated-by:
+###   user: mrustl
+###   function-call: kwb.pkgbuild::use_autopkgdown()
+### generated-on: 2020-11-18 16:44:34
+################################################################################
+
+
+pages:
+  stage: deploy
+  script:
+  - mkdir .public
+  - cp -r * .public
+  - mv .public public
+  artifacts:
+    paths:
+    - public
+  only:
+  - gh-pages
