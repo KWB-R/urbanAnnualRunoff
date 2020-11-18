@@ -1,6 +1,20 @@
-# read Climate Engine data and compute 
-# source: https://app.climateengine.org/climateEngine
-
+#' abimo: compute climate
+#' @description read Climate Engine data and compute (source: 
+#' https://app.climateengine.org/climateEngine)
+#' @param rawdir rawdir 
+#' @param fileName fileName 
+#' @param skip skip
+#' @param sep sep
+#' @param dec dec
+#' @param outAnnual outAnnual 
+#' @param outSummer outSummer 
+#'
+#' @return ???
+#' @export
+#'
+#' @importFrom lubridate month year
+#' @importFrom dplyr group_by summarize
+#' @importFrom rlang .data
 computeABIMOclimate <- function(rawdir, 
                                 fileName, 
                                 skip,
@@ -27,14 +41,14 @@ computeABIMOclimate <- function(rawdir,
   
   # compute annual total
   annualTot <- dat %>%
-    dplyr::group_by(year) %>%
-    dplyr::summarize(annual = sum(V2))
+    dplyr::group_by(.data$year) %>%
+    dplyr::summarize(.data$annual = sum(V2))
   
   # compute summer total per year
   summerTot <- dat %>%
-    dplyr::filter(summer==1) %>%
-    dplyr::group_by(year) %>%
-    dplyr::summarize(summer=sum(V2))
+    dplyr::filter(.data$summer==1) %>%
+    dplyr::group_by(.data$year) %>%
+    dplyr::summarize(summer=sum(.data$V2))
   
   # write output files
   write.table(annualTot, file.path(rawdir, outAnnual), quote=FALSE)
