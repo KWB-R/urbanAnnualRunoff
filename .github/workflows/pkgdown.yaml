@@ -1,9 +1,10 @@
 on:
   push:
-    branches: 
+    branches:
       - master
+      - main
       - dev
-  
+
 name: pkgdown
 
 jobs:
@@ -35,7 +36,7 @@ jobs:
           remotes::install_deps(dependencies = TRUE)
           pkgmeta::travis_pkg_install_script()
         shell: Rscript {0}
-        
+
       - name: Cache R packages
         uses: actions/cache@v1
         with:
