@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r workflow eval=FALSE}
+```{r workflow, eval = FALSE}
 ### prerequisites (64bit R)
 if(Sys.getenv("R_ARCH") != "/x64") {
   stop("Spatial operations need a lot of RAM. Use of 64bit R is required. 
