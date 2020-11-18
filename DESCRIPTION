@@ -5,9 +5,16 @@ Version: 0.0.0.9000
 Authors@R: 
     c(person(given = "Roberto",
              family = "Tatis-Muvdi",
-             role = c("aut", "cre"),
+             role = c("aut"),
              email = "roberto.tatis-muvdi@kompetenz-wasser.de",
              comment = c(ORCID = "0000-0003-0490-7999")),
+      person(given = "Michael",
+             family = "Rustler",
+             role = c("ctb", "cre"),
+             email = "michael.rustler@kompetenz-wasser.de",
+             comment = c(ORCID = "0000-0003-0647-7726")),
+      person(given = "KEYS",
+             role = "fnd"),
       person(given = "Kompetenzzentrum Wasser Berlin gGmbH (KWB)",
              role = "cph"))
 Description: Used in Project KEYS for generating inputs to
