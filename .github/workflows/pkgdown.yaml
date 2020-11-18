@@ -1,8 +1,8 @@
 on:
   push:
     branches:
-      - master
       - main
+      - master
       - dev
 
 name: pkgdown
@@ -12,9 +12,6 @@ jobs:
     runs-on: macOS-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-#      LANG: de_DE.UTF-8
-#      LC_ALL: de_DE.UTF-8
-#      LC_CTYPE: de_DE.UTF-8
     steps:
       - uses: actions/checkout@v2
 
@@ -29,34 +26,24 @@ jobs:
           writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
         shell: Rscript {0}
 
-      - name: Install dependencies
-        run: |
-          install.packages("remotes")
-          remotes::install_github("kwb-r/pkgmeta")
-          remotes::install_deps(dependencies = TRUE)
-          pkgmeta::travis_pkg_install_script()
-        shell: Rscript {0}
-
       - name: Cache R packages
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ${{ env.R_LIBS_USER }}
           key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
           restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
 
-#      - name: Install package
-#        run: R CMD INSTALL .
-
-      - name: Before deploy
+      - name: Install dependencies
         run: |
-          codemeta <- pkgmeta::create_pkg_codemeta(pkgmeta::get_github_packages(), libpath = Sys.getenv("R_LIBS_USER"))
-          file_json <- file.path(getwd(), "codemetar.json")
-          print(file_json)
-          pkgmeta::write_pkg_codemeta_json(codemeta, file = file_json)
-          remotes::install_github("kwb-r/kwb.pkgbuild@github-actions")
+          remotes::install_deps(dependencies = TRUE)
+          install.packages("pkgdown", type = "binary")
         shell: Rscript {0}
+
+      - name: Install package
+        run: R CMD INSTALL .
 
       - name: Deploy package
         run: |
-          kwb.pkgbuild::deploy_to_branch_with_extra_files(vignettes_file_pattern_to_copy = "\\.json$|\\.html$")
-        shell: Rscript {0}
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          Rscript -e 'pkgdown::deploy_to_branch(new_process = FALSE)'
