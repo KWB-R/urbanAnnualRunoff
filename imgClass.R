@@ -25,7 +25,7 @@
 #' load an existing file.
 #' @param modelName File name for saving the fitted random forest model
 #' @param nCores  no. of cores for running in parallel mode (uses library 
-#' 'doParallel')
+#' 'doParallel'), (default: parallel::detectCores() - 1)
 #' @param mtryGrd Number of trees to grow. In the random forests literature, this 
 #' is referred to as the ntree parameter. Larger number of trees produce more 
 #' stable models and covariate importance estimates, but require more memory and 
@@ -49,8 +49,12 @@
 #'
 #' @return writes a lot of output files to different folders ??? (details!)
 #' @export
-#'
-#' @examples
+#' @importFrom caret createFolds train trainControl 
+#' @importFrom doParallel registerDoParallel
+#' @importFrom kwb.utils multiSubstitute
+#' @importFrom parallel makePSOCKcluster stopCluster
+#' @importFrom raster brick extract shapefile
+#' 
 buildClassMod <- function(rawdir, 
                           image, 
                           groundTruth,
@@ -62,7 +66,7 @@ buildClassMod <- function(rawdir,
                           overlayExists = FALSE, 
                           spectrSigName, 
                           modelName, 
-                          nCores, 
+                          nCores = parallel::detectCores() - 1, 
                           mtryGrd, 
                           ntreeGrd,
                           nfolds = 3, 
@@ -142,6 +146,17 @@ buildClassMod <- function(rawdir,
 }
 
 # apply model to predict surface type (roof, street, ...)
+#' apply model to predict surface type (roof, street, ...)
+#'
+#' @param rawdir path to raw data directory
+#' @param modelName modelName
+#' @param image image
+#' @param predName name of prediction file
+#'
+#' @return write raster in "rawdir" with file name "predName"
+#' @export
+#' @importFrom raster brick predict writeRaster
+#' 
 predictSurfClass <- function(rawdir, modelName, image, predName){
   
   # set working directory
