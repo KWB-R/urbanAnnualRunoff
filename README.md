@@ -1,15 +1,16 @@
-[![Appveyor build Status](https://ci.appveyor.com/api/projects/status/github/KWB-R/urbanAnnualRunoff?branch=main&svg=true)](https://ci.appveyor.com/project/KWB-R/urbanAnnualRunoff/branch/main)
-[![R-CMD-check](https://github.com/KWB-R/urbanAnnualRunoff/workflows/R-CMD-check/badge.svg)](https://github.com/KWB-R/urbanAnnualRunoff/actions?query=workflow%3AR-CMD-check)
-[![pkgdown](https://github.com/KWB-R/urbanAnnualRunoff/workflows/pkgdown/badge.svg)](https://github.com/KWB-R/urbanAnnualRunoff/actions?query=workflow%3Apkgdown)
+[![R-CMD-check](https://github.com/KWB-R/urbanAnnualRunoff/actions?query=workflow%3AR-CMD-check/workflows/R-CMD-check/badge.svg)](https://github.com/KWB-R/urbanAnnualRunoff/actions?query=workflow%3AR-CMD-check)
+[![pkgdown](https://github.com/KWB-R/urbanAnnualRunoff/actions?query=workflow%3Apkgdown/workflows/R-CMD-check/badge.svg)](https://github.com/KWB-R/urbanAnnualRunoff/actions?query=workflow%3Apkgdown)
 [![codecov](https://codecov.io/github/KWB-R/urbanAnnualRunoff/branch/main/graphs/badge.svg)](https://codecov.io/github/KWB-R/urbanAnnualRunoff)
 [![Project Status](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/urbanAnnualRunoff)]()
 
 # urbanAnnualRunoff
 
-R Package for deriving urban surfaces for storm runoff analysis. 
-Used in project KEYS for generating inputs to
-runoff model ABIMO for application in cities with data scarcity
+**R Package for Deriving Urban Surfaces for Storm Runoff 
+Analysis**
+
+Used in Project KEYS for generating inputs to
+runoff model ABIMO for application in cities with data scarcity.
 
 ## Installation
 
@@ -33,6 +34,6 @@ remotes::install_github("KWB-R/urbanAnnualRunoff")
 
 ## Documentation
 
-Release: [https://kwb-r.github.io/urbanAnnualRunoff](https://kwb-r.github.io/urbanAnnualRunoff)
+Release: [https://kwb-r.github.io/urbanannualrunoff](https://kwb-r.github.io/urbanannualrunoff)
 
-Development: [https://kwb-r.github.io/urbanAnnualRunoff/dev](https://kwb-r.github.io/urbanAnnualRunoff/dev)
+Development: [https://kwb-r.github.io/urbanannualrunoff/dev](https://kwb-r.github.io/urbanannualrunoff/dev)
