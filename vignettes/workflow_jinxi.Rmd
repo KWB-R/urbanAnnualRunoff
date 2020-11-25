@@ -33,19 +33,18 @@ Workflow in RStudio:
 
 path_list <- list(
   root_path = "C:/kwb/projects/keys/Data-Work packages",
-  site = "Beijing",
+  site = "Jinxi",
   data = "WP2_SUW_pollution_<site>",
-  abimo = "<root_path>/<data>/_DataAnalysis/abimo",
+  abimo = "<root_path>/WP2_SUW_pollution_Beijing/_DataAnalysis/abimo",
   abimo_exe = "<abimo>/Abimo3.2/Abimo3.2/Abimo3_2.exe",
   gis = "<root_path>/<data>/_DataAnalysis/gis",
   climate = "<root_path>/<data>/_DataAnalysis/climate"
 )
 
 paths <- kwb.utils::resolve(path_list)
-#paths <- kwb.utils::resolve(path_list, site = "Jinxi")
 
 # load shapefile containing subcatchments ('blockteilflächen')
-abimo <- raster::shapefile(file.path(paths$gis, 'tz1shifted.shp'))
+abimo <- raster::shapefile(file.path(paths$gis, 'subareas.shp'))
 
 # make ABIMO 'CODE' column
 abimo@data$CODE <- paste(abimo@data$Name, abimo@data$Outlet, sep='_')
@@ -58,7 +57,7 @@ abimo@data$CODE <- padCODE(abimo@data$CODE)
 # build classification model
 urbanAnnualRunoff::buildClassMod(rawdir = paths$gis,
               image = 'tz.tif',
-              groundTruth = 'groundtruth2.shp',
+              groundTruth = 'groundtruth.shp',
               groundTruthValues = list('roof' = 1, 
                                        'street' = 2,
                                        'pervious' = 3,

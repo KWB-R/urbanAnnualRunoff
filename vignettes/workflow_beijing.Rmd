@@ -42,7 +42,6 @@ path_list <- list(
 )
 
 paths <- kwb.utils::resolve(path_list)
-#paths <- kwb.utils::resolve(path_list, site = "Jinxi")
 
 # load shapefile containing subcatchments ('blockteilflächen')
 abimo <- raster::shapefile(file.path(paths$gis, 'tz1shifted.shp'))
