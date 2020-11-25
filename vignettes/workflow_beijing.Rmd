@@ -44,7 +44,7 @@ path_list <- list(
 paths <- kwb.utils::resolve(path_list)
 
 # load shapefile containing subcatchments ('blockteilflächen')
-abimo <- raster::shapefile(file.path(paths$gis, 'tz1shifted.shp'))
+abimo <- raster::shapefile(file.path(paths$gis, 'input_tz1shifted.shp'))
 
 # make ABIMO 'CODE' column
 abimo@data$CODE <- paste(abimo@data$Name, abimo@data$Outlet, sep='_')
@@ -86,7 +86,7 @@ urbanAnnualRunoff::predictSurfClass(rawdir = paths$gis,
 # make overlay object (list where each element is a vector of the pixel values 
 # of the classified image for each subcatchment)
 urbanAnnualRunoff::makeOverlay(rawdir = paths$gis,
-                               rasterData = 'tzClass.img',
+                               rasterData = 'classified_image.tif',
                                subcatchmSPobject = abimo,
                                overlayName = 'surfType')
 
@@ -95,22 +95,22 @@ abimo@data$FLGES <- urbanAnnualRunoff::makeFLGES(subcatchmSPobject = abimo)
 
 # compute ABIMO variable PROBAU (%roof)
 abimo@data$PROBAU <- urbanAnnualRunoff::makePROBAU(rawdir = paths$gis,
-                           rasterData = 'tzClass.tif',
+                           rasterData = 'classified_image.tif',
                            overlayName = 'surfType',
                            targetValue = 1)
 
 # compute ABIMO variable STR_FLGES (m2 street area)
 abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(rawdir = paths$gis,
                                       subcatchmSPobject = abimo,
-                                      mask = 'mask.shp',
-                                      rasterData = 'tzClass.tif',
+                                      mask = 'input_mask.shp',
+                                      rasterData = 'classified_image.tif',
                                       overlayName = 'surfType',
                                       targetValue = 2)
 
 # compute ABIMO variable VG (% soil sealing)
 abimo@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
                         subcatchmSPobject = abimo,
-                        rasterData = 'impervProj.tif',
+                        rasterData = 'input_impervious.tif',
                         targetValue = 80)
 
 # compute ABIMO variable PROVGU (% other impervious areas) as 
