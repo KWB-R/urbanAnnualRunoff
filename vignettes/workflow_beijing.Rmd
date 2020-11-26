@@ -51,6 +51,7 @@ abimo@data$CODE <- paste(abimo@data$Name, abimo@data$Outlet, sep='_')
 
 # pad CODE with zeroes to match output of ABIMO
 abimo@data$CODE <- urbanAnnualRunoff::padCODE(abimo@data$CODE)
+<<<<<<< HEAD
 
 # build classification model
 urbanAnnualRunoff::buildClassMod(rawdir = paths$gis,
@@ -70,6 +71,29 @@ urbanAnnualRunoff::buildClassMod(rawdir = paths$gis,
                                  nfolds = 3, 
                                  nodesize = 3, 
                                  cvrepeats = 2)
+=======
+
+
+
+# build classification model
+urbanAnnualRunoff::buildClassMod(rawdir = paths$gis,
+              image = 'tz.tif',
+              groundTruth = 'groundtruth2.shp',
+              groundTruthValues = list('roof' = 1, 
+                                       'street' = 2,
+                                       'pervious' = 3,
+                                       'shadow' = 4,
+                                       'water' = 5),
+              spectrSigName = 'spectrSig.Rdata',
+              modelName = 'rForest.Rdata',
+              overlayExists = FALSE,
+              nCores = parallel::detectCores() - 1,
+              mtryGrd = 1:3, 
+              ntreeGrd=seq(80, 150, by=10),
+              nfolds = 3, 
+              nodesize = 3, 
+              cvrepeats = 2)
+>>>>>>> dfc7e17a621d7e769e880b97fa26814ec13dcf9c
 
 # check model performance
 load(file.path(paths$gis,"rForest.Rdata"))
@@ -79,22 +103,35 @@ caret::confusionMatrix(data = model$finalModel$predicted,
 
 # classify image for roofs and streets
 urbanAnnualRunoff::predictSurfClass(rawdir = paths$gis,
+<<<<<<< HEAD
                                     modelName = 'rForest.Rdata',
                                     image = 'input_image.tif',
                                     predName = 'classified_image.tif')
+=======
+                 modelName = 'rForest.Rdata',
+                 image = 'tz.tif',
+                 predName = 'classified-image.tif')
+>>>>>>> dfc7e17a621d7e769e880b97fa26814ec13dcf9c
 
 # make overlay object (list where each element is a vector of the pixel values 
 # of the classified image for each subcatchment)
 urbanAnnualRunoff::makeOverlay(rawdir = paths$gis,
+<<<<<<< HEAD
                                rasterData = 'classified_image.tif',
                                subcatchmSPobject = abimo,
                                overlayName = 'surfType')
+=======
+            rasterData = 'classified-image.tif',
+            subcatchmSPobject = abimo,
+            overlayName = 'surfType')
+>>>>>>> dfc7e17a621d7e769e880b97fa26814ec13dcf9c
 
 # make ABIMO variable FLGES
 abimo@data$FLGES <- urbanAnnualRunoff::makeFLGES(subcatchmSPobject = abimo)
 
 # compute ABIMO variable PROBAU (%roof)
 abimo@data$PROBAU <- urbanAnnualRunoff::makePROBAU(rawdir = paths$gis,
+<<<<<<< HEAD
                                                    rasterData = 'classified_image.tif',
                                                    overlayName = 'surfType',
                                                    targetValue = 1)
@@ -106,22 +143,25 @@ abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(rawdir = paths$gis,
                                                          rasterData = 'classified_image.tif',
                                                          overlayName = 'surfType',
                                                          targetValue = 2)
+=======
+                           rasterData = 'classified-image.tif',
+                           overlayName = 'surfType',
+                           targetValue = 1)
+
+# compute ABIMO variable STR_FLGES (m2 street area)
+abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(rawdir = paths$gis,
+                                      subcatchmSPobject = abimo,
+                                      mask = 'mask.shp',
+                                      rasterData = 'classified-image.tif',
+                                      overlayName = 'surfType',
+                                      targetValue = 2)
+>>>>>>> dfc7e17a621d7e769e880b97fa26814ec13dcf9c
 
 # compute ABIMO variable VG (% soil sealing)
 abimo@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
                         subcatchmSPobject = abimo,
                         rasterData = 'input_impervious.tif',
                         targetValue = 80)
-
-# compute ABIMO variable PROVGU (% other impervious areas) as 
-# PROVGU = VG - PROBAU, setting any negative values to 0. this
-# happens for only <10% of subcatchments, and results mainly from
-# differences in spatial resolution and classification differences
-# between both datasets (our classified image and the global land 
-# use dataset)
-abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
-                            abimo@data$VG - abimo@data$PROBAU,
-                            0)
 
 # compute annual and summer rainfall. 
 # *** potential enhancement: ***
@@ -143,15 +183,16 @@ urbanAnnualRunoff::computeABIMOclimate(rawdir = paths$climate,
                     outSummer = 'etp_summer.txt')
 
 # use raw code to compute and assign remaining ABIMO variables manually
-# raw code ------------------------------------------------------------------------------
 
-# raw code ------------------------------------------------------------------------------
-
-# % other impervious areas = total impervious % (VG, from global data 
-# set) - %roof (PROBAU)
+# compute ABIMO variable PROVGU (% other impervious areas) as 
+# PROVGU = VG - PROBAU, setting any negative values to 0. this
+# happens for only <10% of subcatchments, and results mainly from
+# differences in spatial resolution and classification differences
+# between both datasets (our classified image and the global land 
+# use dataset)
 abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
                             abimo@data$VG - abimo@data$PROBAU,
-                           0)
+                            0)
 
 # % imperviousness streets
 abimo@data$VGSTRASSE <- 100
@@ -230,7 +271,7 @@ raster::shapefile(x=abimo,
 
 
 # run ABIMO manually in GUI ----------------------------------------------------
-abimo_out <- sprintf('abimo_%s_out.dbf', paths$site)
+abimo_out <- sprintf('abimo_%sout.dbf', paths$site)
 if(!fs::file_exists(paths$abimo_exe)) {
   stop(cat(sprintf("ABIMO executale does not exist: %s
 Please copy to this location", paths$abimo_exe)))
