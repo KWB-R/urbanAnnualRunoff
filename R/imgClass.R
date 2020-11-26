@@ -141,11 +141,7 @@ buildClassMod <- function(rawdir,
 
   # save model
   cat('\nsaving model...')
-<<<<<<< HEAD
   save(model, file=file.path(paths$gis, modelName))
-=======
-  save(model, file=file.path(rawdir, modelName))
->>>>>>> dfc7e17a621d7e769e880b97fa26814ec13dcf9c
   cat('\ndone\n')
 }
 

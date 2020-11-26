@@ -51,49 +51,26 @@ abimo@data$CODE <- paste(abimo@data$Name, abimo@data$Outlet, sep='_')
 
 # pad CODE with zeroes to match output of ABIMO
 abimo@data$CODE <- urbanAnnualRunoff::padCODE(abimo@data$CODE)
-<<<<<<< HEAD
 
 # build classification model
-urbanAnnualRunoff::buildClassMod(rawdir = paths$gis,
-                                 image = 'input_image.tif',
-                                 groundTruth = 'input_groundtruth2.shp',
-                                 groundTruthValues = list('roof' = 1, 
-                                                          'street' = 2,
-                                                          'pervious' = 3,
-                                                          'shadow' = 4,
-                                                          'water' = 5),
-                                 spectrSigName = 'spectrSig.Rdata',
-                                 modelName = 'rForest.Rdata',
-                                 overlayExists = FALSE,
-                                 nCores = parallel::detectCores() - 1,
-                                 mtryGrd = 1:3, 
-                                 ntreeGrd=seq(80, 150, by=10),
-                                 nfolds = 3, 
-                                 nodesize = 3, 
-                                 cvrepeats = 2)
-=======
-
-
-
-# build classification model
-urbanAnnualRunoff::buildClassMod(rawdir = paths$gis,
-              image = 'tz.tif',
-              groundTruth = 'groundtruth2.shp',
-              groundTruthValues = list('roof' = 1, 
-                                       'street' = 2,
-                                       'pervious' = 3,
-                                       'shadow' = 4,
-                                       'water' = 5),
-              spectrSigName = 'spectrSig.Rdata',
-              modelName = 'rForest.Rdata',
-              overlayExists = FALSE,
-              nCores = parallel::detectCores() - 1,
-              mtryGrd = 1:3, 
-              ntreeGrd=seq(80, 150, by=10),
-              nfolds = 3, 
-              nodesize = 3, 
-              cvrepeats = 2)
->>>>>>> dfc7e17a621d7e769e880b97fa26814ec13dcf9c
+urbanAnnualRunoff::buildClassMod(
+  rawdir = paths$gis,
+  image = 'input_image.tif',
+  groundTruth = 'input_groundtruth2.shp',
+  groundTruthValues = list('roof' = 1, 
+                           'street' = 2,
+                           'pervious' = 3,
+                           'shadow' = 4,
+                           'water' = 5),
+  spectrSigName = 'spectrSig.Rdata',
+  modelName = 'rForest.Rdata',
+  overlayExists = FALSE,
+  nCores = parallel::detectCores() - 1,
+  mtryGrd = 1:3, 
+  ntreeGrd=seq(80, 150, by=10),
+  nfolds = 3, 
+  nodesize = 3, 
+  cvrepeats = 2)
 
 # check model performance
 load(file.path(paths$gis,"rForest.Rdata"))
@@ -103,59 +80,36 @@ caret::confusionMatrix(data = model$finalModel$predicted,
 
 # classify image for roofs and streets
 urbanAnnualRunoff::predictSurfClass(rawdir = paths$gis,
-<<<<<<< HEAD
                                     modelName = 'rForest.Rdata',
                                     image = 'input_image.tif',
                                     predName = 'classified_image.tif')
-=======
-                 modelName = 'rForest.Rdata',
-                 image = 'tz.tif',
-                 predName = 'classified-image.tif')
->>>>>>> dfc7e17a621d7e769e880b97fa26814ec13dcf9c
+
 
 # make overlay object (list where each element is a vector of the pixel values 
 # of the classified image for each subcatchment)
 urbanAnnualRunoff::makeOverlay(rawdir = paths$gis,
-<<<<<<< HEAD
                                rasterData = 'classified_image.tif',
                                subcatchmSPobject = abimo,
                                overlayName = 'surfType')
-=======
-            rasterData = 'classified-image.tif',
-            subcatchmSPobject = abimo,
-            overlayName = 'surfType')
->>>>>>> dfc7e17a621d7e769e880b97fa26814ec13dcf9c
 
 # make ABIMO variable FLGES
 abimo@data$FLGES <- urbanAnnualRunoff::makeFLGES(subcatchmSPobject = abimo)
 
 # compute ABIMO variable PROBAU (%roof)
-abimo@data$PROBAU <- urbanAnnualRunoff::makePROBAU(rawdir = paths$gis,
-<<<<<<< HEAD
-                                                   rasterData = 'classified_image.tif',
-                                                   overlayName = 'surfType',
-                                                   targetValue = 1)
+abimo@data$PROBAU <- urbanAnnualRunoff::makePROBAU(
+  rawdir = paths$gis,
+  rasterData = 'classified_image.tif',
+  overlayName = 'surfType',
+  targetValue = 1)
 
 # compute ABIMO variable STR_FLGES (m2 street area)
-abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(rawdir = paths$gis,
-                                                         subcatchmSPobject = abimo,
-                                                         mask = 'input_mask.shp',
-                                                         rasterData = 'classified_image.tif',
-                                                         overlayName = 'surfType',
-                                                         targetValue = 2)
-=======
-                           rasterData = 'classified-image.tif',
-                           overlayName = 'surfType',
-                           targetValue = 1)
-
-# compute ABIMO variable STR_FLGES (m2 street area)
-abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(rawdir = paths$gis,
-                                      subcatchmSPobject = abimo,
-                                      mask = 'mask.shp',
-                                      rasterData = 'classified-image.tif',
-                                      overlayName = 'surfType',
-                                      targetValue = 2)
->>>>>>> dfc7e17a621d7e769e880b97fa26814ec13dcf9c
+abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(
+  rawdir = paths$gis,
+  subcatchmSPobject = abimo,
+  mask = 'input_mask.shp',
+  rasterData = 'classified_image.tif',
+  overlayName = 'surfType',
+  targetValue = 2)
 
 # compute ABIMO variable VG (% soil sealing)
 abimo@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
@@ -167,20 +121,22 @@ abimo@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
 # *** potential enhancement: ***
 # return the multiannual average annual rainfall. care must be taken to exclude
 # incomplete years from the average calculation. same for summer rainfall
-urbanAnnualRunoff::computeABIMOclimate(rawdir = paths$climate,
-                                       fileName = sprintf('raw_climateeng_precipitation_monthly_%s.txt', 
-                                                          paths$site),
-                                       skip = 6, sep = '', dec = '.',
-                                       outAnnual = 'precipitation_annual.txt',
-                                       outSummer ='precipitation_summer.txt')
+urbanAnnualRunoff::computeABIMOclimate(
+  rawdir = paths$climate,
+  fileName = sprintf('raw_climateeng_precipitation_monthly_%s.txt', 
+                     paths$site),
+  skip = 6, sep = '', dec = '.',
+  outAnnual = 'precipitation_annual.txt',
+  outSummer ='precipitation_summer.txt')
 
 # compute annual and summer ETP. this goes manually into the ABIMO config file
-urbanAnnualRunoff::computeABIMOclimate(rawdir = paths$climate,
-                    fileName = sprintf('raw_climateeng_etp_daily_%s.txt', 
-                                       paths$site),
-                    skip = 6, sep = '', dec = '.',
-                    outAnnual = 'etp_annual.txt',
-                    outSummer = 'etp_summer.txt')
+urbanAnnualRunoff::computeABIMOclimate(
+  rawdir = paths$climate,
+  fileName = sprintf('raw_climateeng_etp_daily_%s.txt', 
+                     paths$site),
+  skip = 6, sep = '', dec = '.',
+  outAnnual = 'etp_annual.txt',
+  outSummer = 'etp_summer.txt')
 
 # use raw code to compute and assign remaining ABIMO variables manually
 
