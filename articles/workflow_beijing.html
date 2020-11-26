@@ -124,7 +124,6 @@ Workflow in RStudio:
 <span class="op">)</span>
 
 <span class="va">paths</span> <span class="op">&lt;-</span> <span class="fu">kwb.utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.utils/man/resolve.html">resolve</a></span><span class="op">(</span><span class="va">path_list</span><span class="op">)</span>
-<span class="co">#paths &lt;- kwb.utils::resolve(path_list, site = "Jinxi")</span>
 
 <span class="co"># load shapefile containing subcatchments ('blockteilflächen')</span>
 <span class="va">abimo</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/shapefile.html">shapefile</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">gis</span>, <span class="st">'tz1shifted.shp'</span><span class="op">)</span><span class="op">)</span>
@@ -133,7 +132,7 @@ Workflow in RStudio:
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">CODE</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">Name</span>, <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">Outlet</span>, sep<span class="op">=</span><span class="st">'_'</span><span class="op">)</span>
 
 <span class="co"># pad CODE with zeroes to match output of ABIMO</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">CODE</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/padCODE.html">padCODE</a></span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">CODE</span><span class="op">)</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">CODE</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/padCODE.html">padCODE</a></span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">CODE</span><span class="op">)</span>
 
 
 
@@ -146,8 +145,8 @@ Workflow in RStudio:
                                        <span class="st">'pervious'</span> <span class="op">=</span> <span class="fl">3</span>,
                                        <span class="st">'shadow'</span> <span class="op">=</span> <span class="fl">4</span>,
                                        <span class="st">'water'</span> <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>,
-              spectrSigName <span class="op">=</span> <span class="st">'spectrSigTz.Rdata'</span>,
-              modelName <span class="op">=</span> <span class="st">'rForestTz.Rdata'</span>,
+              spectrSigName <span class="op">=</span> <span class="st">'spectrSig.Rdata'</span>,
+              modelName <span class="op">=</span> <span class="st">'rForest.Rdata'</span>,
               overlayExists <span class="op">=</span> <span class="cn">FALSE</span>,
               nCores <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
               mtryGrd <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, 
@@ -157,22 +156,21 @@ Workflow in RStudio:
               cvrepeats <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>
 
 <span class="co"># check model performance</span>
-<span class="fu"><a href="https://rdrr.io/r/base/load.html">load</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,<span class="st">"rForestTz.Rdata"</span><span class="op">)</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/load.html">load</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,<span class="st">"rForest.Rdata"</span><span class="op">)</span><span class="op">)</span>
 <span class="fu">caret</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/caret/man/confusionMatrix.html">confusionMatrix</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">model</span><span class="op">$</span><span class="va">finalModel</span><span class="op">$</span><span class="va">predicted</span>, 
                        reference <span class="op">=</span> <span class="va">model</span><span class="op">$</span><span class="va">trainingData</span><span class="op">$</span><span class="va">.outcome</span>, 
                        mode <span class="op">=</span> <span class="st">'prec_recall'</span><span class="op">)</span>
 
 <span class="co"># classify image for roofs and streets</span>
 <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/predictSurfClass.html">predictSurfClass</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
-                 modelName <span class="op">=</span> <span class="st">'rForestTz.Rdata'</span>,
+                 modelName <span class="op">=</span> <span class="st">'rForest.Rdata'</span>,
                  image <span class="op">=</span> <span class="st">'tz.tif'</span>,
-                 predName <span class="op">=</span> <span class="st">'tzClass.tif'</span>,
-                 crsEPSG <span class="op">=</span> <span class="st">'+init=EPSG:4586'</span><span class="op">)</span>
+                 predName <span class="op">=</span> <span class="st">'classified-image.tif'</span><span class="op">)</span>
 
 <span class="co"># make overlay object (list where each element is a vector of the pixel values </span>
 <span class="co"># of the classified image for each subcatchment)</span>
 <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makeOverlay.html">makeOverlay</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
-            rasterData <span class="op">=</span> <span class="st">'tzClass.img'</span>,
+            rasterData <span class="op">=</span> <span class="st">'classified-image.tif'</span>,
             subcatchmSPobject <span class="op">=</span> <span class="va">abimo</span>,
             overlayName <span class="op">=</span> <span class="st">'surfType'</span><span class="op">)</span>
 
@@ -181,7 +179,7 @@ Workflow in RStudio:
 
 <span class="co"># compute ABIMO variable PROBAU (%roof)</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROBAU</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makePROBAU.html">makePROBAU</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
-                           rasterData <span class="op">=</span> <span class="st">'tzClass.tif'</span>,
+                           rasterData <span class="op">=</span> <span class="st">'classified-image.tif'</span>,
                            overlayName <span class="op">=</span> <span class="st">'surfType'</span>,
                            targetValue <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>
 
@@ -189,7 +187,7 @@ Workflow in RStudio:
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">STR_FLGES</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makeSTR_FLGES.html">makeSTR_FLGES</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
                                       subcatchmSPobject <span class="op">=</span> <span class="va">abimo</span>,
                                       mask <span class="op">=</span> <span class="st">'mask.shp'</span>,
-                                      rasterData <span class="op">=</span> <span class="st">'tzClass.tif'</span>,
+                                      rasterData <span class="op">=</span> <span class="st">'classified-image.tif'</span>,
                                       overlayName <span class="op">=</span> <span class="st">'surfType'</span>,
                                       targetValue <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>
 
@@ -198,16 +196,6 @@ Workflow in RStudio:
                         subcatchmSPobject <span class="op">=</span> <span class="va">abimo</span>,
                         rasterData <span class="op">=</span> <span class="st">'impervProj.tif'</span>,
                         targetValue <span class="op">=</span> <span class="fl">80</span><span class="op">)</span>
-
-<span class="co"># compute ABIMO variable PROVGU (% other impervious areas) as </span>
-<span class="co"># PROVGU = VG - PROBAU, setting any negative values to 0. this</span>
-<span class="co"># happens for only &lt;10% of subcatchments, and results mainly from</span>
-<span class="co"># differences in spatial resolution and classification differences</span>
-<span class="co"># between both datasets (our classified image and the global land </span>
-<span class="co"># use dataset)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROVGU</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html">ifelse</a></span><span class="op">(</span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VG</span> <span class="op">-</span> <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROBAU</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span>,
-                            <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VG</span> <span class="op">-</span> <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROBAU</span>,
-                            <span class="fl">0</span><span class="op">)</span>
 
 <span class="co"># compute annual and summer rainfall. </span>
 <span class="co"># *** potential enhancement: ***</span>
@@ -229,15 +217,16 @@ Workflow in RStudio:
                     outSummer <span class="op">=</span> <span class="st">'etp_summer.txt'</span><span class="op">)</span>
 
 <span class="co"># use raw code to compute and assign remaining ABIMO variables manually</span>
-<span class="co"># raw code ------------------------------------------------------------------------------</span>
 
-<span class="co"># raw code ------------------------------------------------------------------------------</span>
-
-<span class="co"># % other impervious areas = total impervious % (VG, from global data </span>
-<span class="co"># set) - %roof (PROBAU)</span>
+<span class="co"># compute ABIMO variable PROVGU (% other impervious areas) as </span>
+<span class="co"># PROVGU = VG - PROBAU, setting any negative values to 0. this</span>
+<span class="co"># happens for only &lt;10% of subcatchments, and results mainly from</span>
+<span class="co"># differences in spatial resolution and classification differences</span>
+<span class="co"># between both datasets (our classified image and the global land </span>
+<span class="co"># use dataset)</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROVGU</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html">ifelse</a></span><span class="op">(</span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VG</span> <span class="op">-</span> <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROBAU</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span>,
                             <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VG</span> <span class="op">-</span> <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROBAU</span>,
-                           <span class="fl">0</span><span class="op">)</span>
+                            <span class="fl">0</span><span class="op">)</span>
 
 <span class="co"># % imperviousness streets</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VGSTRASSE</span> <span class="op">&lt;-</span> <span class="fl">100</span>
@@ -317,7 +306,7 @@ Workflow in RStudio:
 
 
 <span class="co"># run ABIMO manually in GUI ----------------------------------------------------</span>
-<span class="va">abimo_out</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'abimo_%s_out.dbf'</span>, <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>
+<span class="va">abimo_out</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'abimo_%sout.dbf'</span>, <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>
 <span class="kw">if</span><span class="op">(</span><span class="op">!</span><span class="fu">fs</span><span class="fu">::</span><span class="fu"><a href="http://fs.r-lib.org/reference/file_access.html">file_exists</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo_exe</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span>
   <span class="kw"><a href="https://rdrr.io/r/base/stop.html">stop</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cat.html">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">"ABIMO executale does not exist: %s
 Please copy to this location"</span>, <span class="va">paths</span><span class="op">$</span><span class="va">abimo_exe</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
