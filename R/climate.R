@@ -43,17 +43,19 @@ computeABIMOclimate <- function(rawdir,
   # compute annual total
   annualTot <- dat %>%
     dplyr::group_by(.data$year) %>%
-    dplyr::summarize(annual = sum(.data$V2))
+    dplyr::summarize(value = sum(.data$V2))
 
   # compute summer total per year
   summerTot <- dat %>%
     dplyr::filter(.data$summer==1) %>%
     dplyr::group_by(.data$year) %>%
-    dplyr::summarize(summer=sum(.data$V2))
+    dplyr::summarize(value=sum(.data$V2))
 
   # write output files
   utils::write.table(annualTot, file.path(rawdir, outAnnual), quote=FALSE)
   utils::write.table(summerTot, file.path(rawdir, outSummer), quote=FALSE)
 
   cat('\ncheck output files for incomplete years (unusually low annual totals)!\nremove them when computing multiannual average')
+  list(total = annualTot,
+      summer = summerTot)
 }

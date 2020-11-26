@@ -113,16 +113,6 @@ abimo@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
                         rasterData = 'input_impervious.tif',
                         targetValue = 80)
 
-# compute ABIMO variable PROVGU (% other impervious areas) as 
-# PROVGU = VG - PROBAU, setting any negative values to 0. this
-# happens for only <10% of subcatchments, and results mainly from
-# differences in spatial resolution and classification differences
-# between both datasets (our classified image and the global land 
-# use dataset)
-abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
-                            abimo@data$VG - abimo@data$PROBAU,
-                            0)
-
 # compute annual and summer rainfall. 
 # *** potential enhancement: ***
 # return the multiannual average annual rainfall. care must be taken to exclude
@@ -143,15 +133,16 @@ urbanAnnualRunoff::computeABIMOclimate(rawdir = paths$climate,
                     outSummer = 'etp_summer.txt')
 
 # use raw code to compute and assign remaining ABIMO variables manually
-# raw code ------------------------------------------------------------------------------
 
-# raw code ------------------------------------------------------------------------------
-
-# % other impervious areas = total impervious % (VG, from global data 
-# set) - %roof (PROBAU)
+# compute ABIMO variable PROVGU (% other impervious areas) as 
+# PROVGU = VG - PROBAU, setting any negative values to 0. this
+# happens for only <10% of subcatchments, and results mainly from
+# differences in spatial resolution and classification differences
+# between both datasets (our classified image and the global land 
+# use dataset)
 abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
                             abimo@data$VG - abimo@data$PROBAU,
-                           0)
+                            0)
 
 # % imperviousness streets
 abimo@data$VGSTRASSE <- 100
@@ -230,7 +221,7 @@ raster::shapefile(x=abimo,
 
 
 # run ABIMO manually in GUI ----------------------------------------------------
-abimo_out <- sprintf('abimo_%s_out.dbf', paths$site)
+abimo_out <- sprintf('abimo_%sout.dbf', paths$site)
 if(!fs::file_exists(paths$abimo_exe)) {
   stop(cat(sprintf("ABIMO executale does not exist: %s
 Please copy to this location", paths$abimo_exe)))
