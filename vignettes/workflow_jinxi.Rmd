@@ -222,10 +222,11 @@ abimo@data$KAN_BEB<- 100
 abimo@data$KAN_VGU<- 100
 abimo@data$KAN_STR<- 100
 
-# soil field capacity and groundwater level
-abimo@data$FELD_30 <- 15
-abimo@data$FELD_150 <- 15
-abimo@data$FLUR <- 2
+# soil field capacity and groundwater level (personal communication, Dr. Lipin Li, 
+# Harbin Inst. of Technology)
+abimo@data$FELD_30 <- 30
+abimo@data$FELD_150 <- 30
+abimo@data$FLUR <- 1.17
 
 # select required columns and write out new shapefile
 requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 'TEILBLOCK',
