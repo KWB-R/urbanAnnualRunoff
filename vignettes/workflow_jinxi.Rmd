@@ -77,7 +77,7 @@ load(file.path(paths$gis,"rForest.Rdata"))
 caret::confusionMatrix(data = model$finalModel$predicted, 
                        reference = model$trainingData$.outcome, 
                        mode = 'prec_recall')
-
+                       
 # classify image for roofs and streets
 urbanAnnualRunoff::predictSurfClass(rawdir = paths$gis,
                                     modelName = 'rForest.Rdata',
@@ -90,7 +90,6 @@ urbanAnnualRunoff::makeOverlay(rawdir = paths$gis,
                                rasterData = 'classified_image.img',
                                subcatchmSPobject = abimo,
                                overlayName = 'surfType')
-
 # make ABIMO variable FLGES
 abimo@data$FLGES <- urbanAnnualRunoff::makeFLGES(subcatchmSPobject = abimo)
 
@@ -100,7 +99,7 @@ abimo@data$PROBAU <- urbanAnnualRunoff::makePROBAU(
   rasterData = 'classified_image.img',
   overlayName = 'surfType',
   targetValue = 1)
-
+  
 # compute ABIMO variable STR_FLGES (m2 street area)
 abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(
   rawdir = paths$gis,
@@ -128,7 +127,6 @@ precipitation <- urbanAnnualRunoff::computeABIMOclimate(
   skip = 6, sep = '', dec = '.',
   outAnnual = 'precipitation_annual.txt',
   outSummer ='precipitation_summer.txt')
-
 # compute annual and summer ETP. this goes manually into the ABIMO config file
   evapotranspiration <- urbanAnnualRunoff::computeABIMOclimate(rawdir = paths$climate,
                     fileName = sprintf('raw_climateeng_etp_daily_%s.txt', 
@@ -175,20 +173,29 @@ abimo@data$TEILBLOCK <- 1
 abimo@data$NUTZUNG <- 21
 abimo@data$TYP <- 21
 
+
 # annual rainfall (this can be automatized by making 'computeABIMOclimate'
 # return the multiannual average annual rainfall. care must be taken to exclude
 # incomplete years from the average calculation)
-year_min <- 2015
-year_max <- 2019
 
+# manually averaged annual rainfall and summer rainfall
 abimo@data$REGENJA <- 1744 # averaged manually
-  
 abimo@data$REGENSO <- 1258 # averaged manually
   
+# better version using dplyr
+#year_min <- 2015
+#year_max <- 2019
+#abimo@data$REGENJA <- precipitation$total %>% 
+#  dplyr::filter(.data$year >= year_min & .data$year <= year_max) %>% 
+#  dplyr::summarise(value_mean = mean(.data$value)) %>% 
+#  dplyr::pull()
+#abimo@data$REGENSO <- precipitation$summer %>% 
+#  dplyr::filter(.data$year >= year_min & .data$year <= year_max) %>% 
+#  dplyr::summarise(value_mean = mean(.data$value)) %>%  
+#  dplyr::pull()
 
 ### calculate mean evapotranspiration (total, summer) to be defined as input 
 ### in ABIMO "config.xml" file
-
 # ept_mean <- tibble::tibble(total = evapotranspiration$total %>% 
 #   dplyr::filter(.data$year >= year_min & .data$year <= year_max) %>% 
 #   dplyr::summarise(value_mean = mean(value)) %>% 
@@ -215,6 +222,22 @@ abimo@data$REGENSO <- 1258 # averaged manually
 # ### open ABIMO config for manual data input
 # kwb.utils::hsOpenWindowsExplorer(abimo_config)
 
+  
+#abimo_config <- file.path(paths$abimo, "config.xml")
+
+#message(sprintf("Manually set values in ABIMO config file:
+'%s'
+
+#In '<section name=\"PotentielleVerdunstung\">\"' 
+
+#Enter the following values for for 'BEZIRK = 1' and also default 'BEZIRK = 0'
+#etp: %4.0f
+#etps: %4.1f",
+#                abimo_config,
+#                ept_mean$total, 
+#                ept_mean$summer))
+### open ABIMO config for manual data input
+#kwb.utils::hsOpenWindowsExplorer(abimo_config)
 
 # channelization degrees. these are set manually since there is no data
 abimo@data$KANAL<- 1
