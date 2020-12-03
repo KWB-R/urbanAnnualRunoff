@@ -36,7 +36,7 @@ path_list <- list(
   site = "Beijing",
   data = "WP2_SUW_pollution_<site>",
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
-  abimo_exe = "<abimo>/Abimo3.2/Abimo3.2/Abimo3_2.exe",
+  abimo_exe = "<abimo>/Abimo3_2.exe",
   gis = "<root_path>/<data>/_DataAnalysis/gis",
   climate = "<root_path>/<data>/_DataAnalysis/climate"
 )
@@ -44,7 +44,7 @@ path_list <- list(
 paths <- kwb.utils::resolve(path_list)
 
 # load shapefile containing subcatchments ('blockteilflächen')
-abimo <- raster::shapefile(file.path(paths$gis, 'input_tz1shifted.shp'))
+abimo <- raster::shapefile(file.path(paths$gis, 'input_subareas.shp'))
 
 # make ABIMO 'CODE' column
 abimo@data$CODE <- paste(abimo@data$Name, abimo@data$Outlet, sep='_')
@@ -121,7 +121,7 @@ abimo@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
 # *** potential enhancement: ***
 # return the multiannual average annual rainfall. care must be taken to exclude
 # incomplete years from the average calculation. same for summer rainfall
-urbanAnnualRunoff::computeABIMOclimate(
+precipitation <- urbanAnnualRunoff::computeABIMOclimate(
   rawdir = paths$climate,
   fileName = sprintf('raw_climateeng_precipitation_monthly_%s.txt', 
                      paths$site),
@@ -130,7 +130,7 @@ urbanAnnualRunoff::computeABIMOclimate(
   outSummer ='precipitation_summer.txt')
 
 # compute annual and summer ETP. this goes manually into the ABIMO config file
-urbanAnnualRunoff::computeABIMOclimate(
+  evapotranspiration <- urbanAnnualRunoff::computeABIMOclimate(
   rawdir = paths$climate,
   fileName = sprintf('raw_climateeng_etp_daily_%s.txt', 
                      paths$site),
