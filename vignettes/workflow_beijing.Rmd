@@ -1,0 +1,257 @@
+---
+title: "Workflow: Beijing"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{"Workflow: Beijing"}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r workflow, eval = FALSE}
+### prerequisites (64bit R)
+if(Sys.getenv("R_ARCH") != "/x64") {
+  stop("Spatial operations need a lot of RAM. Use of 64bit R is required. 
+  
+Workflow in RStudio:  
+1. Go to 'Tools' (top pane)
+2. Select 'Global Options' 
+3. Select 'General' 
+4. Under 'R Sessions' select 'Change' 
+5. Select 'Use the machine`s default R version of R64 (64-bit)'
+6. Close all R Studio sessions  
+7. Restart R Studio"
+)
+} else {
+
+
+path_list <- list(
+  root_path = "C:/kwb/projects/keys/Data-Work packages",
+  site = "Beijing",
+  data = "WP2_SUW_pollution_<site>",
+  abimo = "<root_path>/<data>/_DataAnalysis/abimo",
+  abimo_exe = "<abimo>/Abimo3_2.exe",
+  gis = "<root_path>/<data>/_DataAnalysis/gis",
+  climate = "<root_path>/<data>/_DataAnalysis/climate"
+)
+
+paths <- kwb.utils::resolve(path_list)
+
+# load shapefile containing subcatchments ('blockteilflächen')
+abimo <- raster::shapefile(file.path(paths$gis, 'input_subareas.shp'))
+
+# make ABIMO 'CODE' column
+abimo@data$CODE <- paste(abimo@data$Name, abimo@data$Outlet, sep='_')
+
+# pad CODE with zeroes to match output of ABIMO
+abimo@data$CODE <- urbanAnnualRunoff::padCODE(abimo@data$CODE)
+
+# build classification model
+urbanAnnualRunoff::buildClassMod(
+  rawdir = paths$gis,
+  image = 'input_image.tif',
+  groundTruth = 'input_groundtruth2.shp',
+  groundTruthValues = list('roof' = 1, 
+                           'street' = 2,
+                           'pervious' = 3,
+                           'shadow' = 4,
+                           'water' = 5),
+  spectrSigName = 'spectrSig.Rdata',
+  modelName = 'rForest.Rdata',
+  overlayExists = FALSE,
+  nCores = parallel::detectCores() - 1,
+  mtryGrd = 1:3, 
+  ntreeGrd=seq(80, 150, by=10),
+  nfolds = 3, 
+  nodesize = 3, 
+  cvrepeats = 2)
+
+# check model performance
+load(file.path(paths$gis,"rForest.Rdata"))
+caret::confusionMatrix(data = model$finalModel$predicted, 
+                       reference = model$trainingData$.outcome, 
+                       mode = 'prec_recall')
+
+# classify image for roofs and streets
+urbanAnnualRunoff::predictSurfClass(rawdir = paths$gis,
+                                    modelName = 'rForest.Rdata',
+                                    image = 'input_image.tif',
+                                    predName = 'classified_image.tif')
+
+
+# make overlay object (list where each element is a vector of the pixel values 
+# of the classified image for each subcatchment)
+urbanAnnualRunoff::makeOverlay(rawdir = paths$gis,
+                               rasterData = 'classified_image.tif',
+                               subcatchmSPobject = abimo,
+                               overlayName = 'surfType')
+
+# make ABIMO variable FLGES
+abimo@data$FLGES <- urbanAnnualRunoff::makeFLGES(subcatchmSPobject = abimo)
+
+# compute ABIMO variable PROBAU (%roof)
+abimo@data$PROBAU <- urbanAnnualRunoff::makePROBAU(
+  rawdir = paths$gis,
+  rasterData = 'classified_image.tif',
+  overlayName = 'surfType',
+  targetValue = 1)
+
+# compute ABIMO variable STR_FLGES (m2 street area)
+abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(
+  rawdir = paths$gis,
+  subcatchmSPobject = abimo,
+  mask = 'input_mask.shp',
+  rasterData = 'classified_image.tif',
+  overlayName = 'surfType',
+  targetValue = 2)
+
+# compute ABIMO variable VG (% soil sealing)
+abimo@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
+                        subcatchmSPobject = abimo,
+                        rasterData = 'input_impervious.tif',
+                        targetValue = 80)
+
+# compute annual and summer rainfall. 
+# *** potential enhancement: ***
+# return the multiannual average annual rainfall. care must be taken to exclude
+# incomplete years from the average calculation. same for summer rainfall
+precipitation <- urbanAnnualRunoff::computeABIMOclimate(
+  rawdir = paths$climate,
+  fileName = sprintf('raw_climateeng_precipitation_monthly_%s.txt', 
+                     paths$site),
+  skip = 6, sep = '', dec = '.',
+  outAnnual = 'precipitation_annual.txt',
+  outSummer ='precipitation_summer.txt')
+
+# compute annual and summer ETP. this goes manually into the ABIMO config file
+  evapotranspiration <- urbanAnnualRunoff::computeABIMOclimate(
+  rawdir = paths$climate,
+  fileName = sprintf('raw_climateeng_etp_daily_%s.txt', 
+                     paths$site),
+  skip = 6, sep = '', dec = '.',
+  outAnnual = 'etp_annual.txt',
+  outSummer = 'etp_summer.txt')
+
+# use raw code to compute and assign remaining ABIMO variables manually
+
+# compute ABIMO variable PROVGU (% other impervious areas) as 
+# PROVGU = VG - PROBAU, setting any negative values to 0. this
+# happens for only <10% of subcatchments, and results mainly from
+# differences in spatial resolution and classification differences
+# between both datasets (our classified image and the global land 
+# use dataset)
+abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
+                            abimo@data$VG - abimo@data$PROBAU,
+                            0)
+
+# % imperviousness streets
+abimo@data$VGSTRASSE <- 100
+
+# %cover types in other imperv. areas (PROVGU)
+abimo@data$BELAG1 <- 100
+abimo@data$BELAG2 <- 0
+abimo@data$BELAG3 <- 0
+abimo@data$BELAG4 <- 0
+
+# %cover types in street areas
+abimo@data$STR_BELAG1 <- 100
+abimo@data$STR_BELAG2 <- 0
+abimo@data$STR_BELAG3 <- 0
+abimo@data$STR_BELAG4 <- 0
+
+# identifiers
+abimo@data$BEZIRK <- 1
+abimo@data$STAGEB <- 1
+abimo@data$BLOCK <- 1
+abimo@data$TEILBLOCK <- 1
+abimo@data$NUTZUNG <- 21
+abimo@data$TYP <- 38
+
+# annual rainfall (this can be automatized by making 'computeABIMOclimate'
+# return the multiannual average annual rainfall. care must be taken to exclude
+# incomplete years from the average calculation)
+abimo@data$REGENJA <- 543
+abimo@data$REGENSO <- 491
+
+# channelization degrees. these are set manually since there is no data
+abimo@data$KANAL<- 1
+abimo@data$KAN_BEB<- 100
+abimo@data$KAN_VGU<- 100
+abimo@data$KAN_STR<- 100
+
+# soil field capacity and groundwater level
+abimo@data$FELD_30 <- 35
+abimo@data$FELD_150 <- 35
+abimo@data$FLUR <- 10
+
+# select required columns and write out new shapefile
+requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 'TEILBLOCK',
+                  'NUTZUNG', 'TYP',
+                  'FLGES', 'STR_FLGES',
+                  'PROBAU', 'PROVGU', 'VGSTRASSE',
+                  'BELAG1', 'BELAG2', 'BELAG3', 'BELAG4',
+                  'STR_BELAG1', 'STR_BELAG2', 'STR_BELAG3', 'STR_BELAG4',
+                  'KAN_BEB', 'KAN_VGU', 'KAN_STR',
+                  'REGENJA', 'REGENSO',
+                  'FELD_30', 'FELD_150', 'FLUR')
+abimo@data <- abimo@data[, requiredCols]
+
+# format numbers to 0 decimal places (avoid 'pseudo-accuracy')
+abimo@data[, 8:ncol(abimo@data)] <- round(
+  abimo@data[, 8:ncol(abimo@data)],
+  digits = 0)
+
+# change decimal separator to comma
+# (ABIMO does not run correctly otherwise)
+abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
+                                         c(1, 2),
+                                         FUN=as.character),
+                                 c(1, 2),
+                                 FUN=gsub,
+                                 pattern="\\.",
+                                 replacement=","),
+                           stringsAsFactors = FALSE)
+
+# write ABIMO input table
+abimo_inp <- sprintf('abimo_%s.shp', paths$site)
+abimo_inp_path <- file.path(paths$abimo, abimo_inp)
+raster::shapefile(x=abimo, 
+                  filename=abimo_inp_path,
+                  overwrite=TRUE)
+
+
+# run ABIMO manually in GUI ----------------------------------------------------
+abimo_out <- sprintf('abimo_%sout.dbf', paths$site)
+if(!fs::file_exists(paths$abimo_exe)) {
+  stop(cat(sprintf("ABIMO executale does not exist: %s
+Please copy to this location", paths$abimo_exe)))
+} else {
+message(cat(sprintf("Run ABIMO executable manually:
+1. Select input file: \"%s\"
+2. Save it under: \"%s\"", 
+                    abimo_inp_path, 
+                    abimo_out))
+)
+      
+kwb.utils::hsOpenWindowsExplorer(paths$abimo_exe)
+
+# postprocessing ----------------------------------------------------------------
+# post-process ABIMO output file -> join it with input shape file for 
+# visualization in GIS
+urbanAnnualRunoff::postProcessABIMO(rawdir = paths$abimo,
+                                    nameABIMOin = abimo_inp,
+                                    nameABIMOout = abimo_out,
+                                    ABIMOjoinedName = sprintf("%s_joined.dbf", abimo_out)
+)
+}
+
+}
+
+
+```
