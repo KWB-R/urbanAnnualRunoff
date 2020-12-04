@@ -118,7 +118,7 @@ Workflow in RStudio:
   site <span class="op">=</span> <span class="st">"Beijing"</span>,
   data <span class="op">=</span> <span class="st">"WP2_SUW_pollution_&lt;site&gt;"</span>,
   abimo <span class="op">=</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/abimo"</span>,
-  abimo_exe <span class="op">=</span> <span class="st">"&lt;abimo&gt;/Abimo3.2/Abimo3.2/Abimo3_2.exe"</span>,
+  abimo_exe <span class="op">=</span> <span class="st">"&lt;abimo&gt;/Abimo3_2.exe"</span>,
   gis <span class="op">=</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/gis"</span>,
   climate <span class="op">=</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/climate"</span>
 <span class="op">)</span>
@@ -126,7 +126,7 @@ Workflow in RStudio:
 <span class="va">paths</span> <span class="op">&lt;-</span> <span class="fu">kwb.utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.utils/man/resolve.html">resolve</a></span><span class="op">(</span><span class="va">path_list</span><span class="op">)</span>
 
 <span class="co"># load shapefile containing subcatchments ('blockteilflächen')</span>
-<span class="va">abimo</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/shapefile.html">shapefile</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">gis</span>, <span class="st">'tz1shifted.shp'</span><span class="op">)</span><span class="op">)</span>
+<span class="va">abimo</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/shapefile.html">shapefile</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">gis</span>, <span class="st">'input_subareas.shp'</span><span class="op">)</span><span class="op">)</span>
 
 <span class="co"># make ABIMO 'CODE' column</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">CODE</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">Name</span>, <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">Outlet</span>, sep<span class="op">=</span><span class="st">'_'</span><span class="op">)</span>
@@ -134,26 +134,25 @@ Workflow in RStudio:
 <span class="co"># pad CODE with zeroes to match output of ABIMO</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">CODE</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/padCODE.html">padCODE</a></span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">CODE</span><span class="op">)</span>
 
-
-
 <span class="co"># build classification model</span>
-<span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/buildClassMod.html">buildClassMod</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
-              image <span class="op">=</span> <span class="st">'tz.tif'</span>,
-              groundTruth <span class="op">=</span> <span class="st">'groundtruth2.shp'</span>,
-              groundTruthValues <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="st">'roof'</span> <span class="op">=</span> <span class="fl">1</span>, 
-                                       <span class="st">'street'</span> <span class="op">=</span> <span class="fl">2</span>,
-                                       <span class="st">'pervious'</span> <span class="op">=</span> <span class="fl">3</span>,
-                                       <span class="st">'shadow'</span> <span class="op">=</span> <span class="fl">4</span>,
-                                       <span class="st">'water'</span> <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>,
-              spectrSigName <span class="op">=</span> <span class="st">'spectrSig.Rdata'</span>,
-              modelName <span class="op">=</span> <span class="st">'rForest.Rdata'</span>,
-              overlayExists <span class="op">=</span> <span class="cn">FALSE</span>,
-              nCores <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-              mtryGrd <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, 
-              ntreeGrd<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html">seq</a></span><span class="op">(</span><span class="fl">80</span>, <span class="fl">150</span>, by<span class="op">=</span><span class="fl">10</span><span class="op">)</span>,
-              nfolds <span class="op">=</span> <span class="fl">3</span>, 
-              nodesize <span class="op">=</span> <span class="fl">3</span>, 
-              cvrepeats <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>
+<span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/buildClassMod.html">buildClassMod</a></span><span class="op">(</span>
+  rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
+  image <span class="op">=</span> <span class="st">'input_image.tif'</span>,
+  groundTruth <span class="op">=</span> <span class="st">'input_groundtruth2.shp'</span>,
+  groundTruthValues <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="st">'roof'</span> <span class="op">=</span> <span class="fl">1</span>, 
+                           <span class="st">'street'</span> <span class="op">=</span> <span class="fl">2</span>,
+                           <span class="st">'pervious'</span> <span class="op">=</span> <span class="fl">3</span>,
+                           <span class="st">'shadow'</span> <span class="op">=</span> <span class="fl">4</span>,
+                           <span class="st">'water'</span> <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>,
+  spectrSigName <span class="op">=</span> <span class="st">'spectrSig.Rdata'</span>,
+  modelName <span class="op">=</span> <span class="st">'rForest.Rdata'</span>,
+  overlayExists <span class="op">=</span> <span class="cn">FALSE</span>,
+  nCores <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
+  mtryGrd <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, 
+  ntreeGrd<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html">seq</a></span><span class="op">(</span><span class="fl">80</span>, <span class="fl">150</span>, by<span class="op">=</span><span class="fl">10</span><span class="op">)</span>,
+  nfolds <span class="op">=</span> <span class="fl">3</span>, 
+  nodesize <span class="op">=</span> <span class="fl">3</span>, 
+  cvrepeats <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>
 
 <span class="co"># check model performance</span>
 <span class="fu"><a href="https://rdrr.io/r/base/load.html">load</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,<span class="st">"rForest.Rdata"</span><span class="op">)</span><span class="op">)</span>
@@ -163,58 +162,63 @@ Workflow in RStudio:
 
 <span class="co"># classify image for roofs and streets</span>
 <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/predictSurfClass.html">predictSurfClass</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
-                 modelName <span class="op">=</span> <span class="st">'rForest.Rdata'</span>,
-                 image <span class="op">=</span> <span class="st">'tz.tif'</span>,
-                 predName <span class="op">=</span> <span class="st">'classified-image.tif'</span><span class="op">)</span>
+                                    modelName <span class="op">=</span> <span class="st">'rForest.Rdata'</span>,
+                                    image <span class="op">=</span> <span class="st">'input_image.tif'</span>,
+                                    predName <span class="op">=</span> <span class="st">'classified_image.tif'</span><span class="op">)</span>
+
 
 <span class="co"># make overlay object (list where each element is a vector of the pixel values </span>
 <span class="co"># of the classified image for each subcatchment)</span>
 <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makeOverlay.html">makeOverlay</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
-            rasterData <span class="op">=</span> <span class="st">'classified-image.tif'</span>,
-            subcatchmSPobject <span class="op">=</span> <span class="va">abimo</span>,
-            overlayName <span class="op">=</span> <span class="st">'surfType'</span><span class="op">)</span>
+                               rasterData <span class="op">=</span> <span class="st">'classified_image.tif'</span>,
+                               subcatchmSPobject <span class="op">=</span> <span class="va">abimo</span>,
+                               overlayName <span class="op">=</span> <span class="st">'surfType'</span><span class="op">)</span>
 
 <span class="co"># make ABIMO variable FLGES</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FLGES</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makeFLGES.html">makeFLGES</a></span><span class="op">(</span>subcatchmSPobject <span class="op">=</span> <span class="va">abimo</span><span class="op">)</span>
 
 <span class="co"># compute ABIMO variable PROBAU (%roof)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROBAU</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makePROBAU.html">makePROBAU</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
-                           rasterData <span class="op">=</span> <span class="st">'classified-image.tif'</span>,
-                           overlayName <span class="op">=</span> <span class="st">'surfType'</span>,
-                           targetValue <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROBAU</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makePROBAU.html">makePROBAU</a></span><span class="op">(</span>
+  rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
+  rasterData <span class="op">=</span> <span class="st">'classified_image.tif'</span>,
+  overlayName <span class="op">=</span> <span class="st">'surfType'</span>,
+  targetValue <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>
 
 <span class="co"># compute ABIMO variable STR_FLGES (m2 street area)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">STR_FLGES</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makeSTR_FLGES.html">makeSTR_FLGES</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
-                                      subcatchmSPobject <span class="op">=</span> <span class="va">abimo</span>,
-                                      mask <span class="op">=</span> <span class="st">'mask.shp'</span>,
-                                      rasterData <span class="op">=</span> <span class="st">'classified-image.tif'</span>,
-                                      overlayName <span class="op">=</span> <span class="st">'surfType'</span>,
-                                      targetValue <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">STR_FLGES</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makeSTR_FLGES.html">makeSTR_FLGES</a></span><span class="op">(</span>
+  rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
+  subcatchmSPobject <span class="op">=</span> <span class="va">abimo</span>,
+  mask <span class="op">=</span> <span class="st">'input_mask.shp'</span>,
+  rasterData <span class="op">=</span> <span class="st">'classified_image.tif'</span>,
+  overlayName <span class="op">=</span> <span class="st">'surfType'</span>,
+  targetValue <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>
 
 <span class="co"># compute ABIMO variable VG (% soil sealing)</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VG</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makeVG.html">makeVG</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
                         subcatchmSPobject <span class="op">=</span> <span class="va">abimo</span>,
-                        rasterData <span class="op">=</span> <span class="st">'impervProj.tif'</span>,
+                        rasterData <span class="op">=</span> <span class="st">'input_impervious.tif'</span>,
                         targetValue <span class="op">=</span> <span class="fl">80</span><span class="op">)</span>
 
 <span class="co"># compute annual and summer rainfall. </span>
 <span class="co"># *** potential enhancement: ***</span>
 <span class="co"># return the multiannual average annual rainfall. care must be taken to exclude</span>
 <span class="co"># incomplete years from the average calculation. same for summer rainfall</span>
-<span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/computeABIMOclimate.html">computeABIMOclimate</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">climate</span>,
-                    fileName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'raw_climateeng_precipitation_daily_%s.txt'</span>, 
-                                       <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>,
-                    skip <span class="op">=</span> <span class="fl">6</span>, sep <span class="op">=</span> <span class="st">''</span>, dec <span class="op">=</span> <span class="st">'.'</span>,
-                    outAnnual <span class="op">=</span> <span class="st">'precipitation_annual.txt'</span>,
-                    outSummer <span class="op">=</span><span class="st">'precipitation_summer.txt'</span><span class="op">)</span>
+<span class="va">precipitation</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/computeABIMOclimate.html">computeABIMOclimate</a></span><span class="op">(</span>
+  rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">climate</span>,
+  fileName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'raw_climateeng_precipitation_monthly_%s.txt'</span>, 
+                     <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>,
+  skip <span class="op">=</span> <span class="fl">6</span>, sep <span class="op">=</span> <span class="st">''</span>, dec <span class="op">=</span> <span class="st">'.'</span>,
+  outAnnual <span class="op">=</span> <span class="st">'precipitation_annual.txt'</span>,
+  outSummer <span class="op">=</span><span class="st">'precipitation_summer.txt'</span><span class="op">)</span>
 
 <span class="co"># compute annual and summer ETP. this goes manually into the ABIMO config file</span>
-<span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/computeABIMOclimate.html">computeABIMOclimate</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">climate</span>,
-                    fileName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'raw_climateeng_etp_daily_%s.txt'</span>, 
-                                       <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>,
-                    skip <span class="op">=</span> <span class="fl">6</span>, sep <span class="op">=</span> <span class="st">''</span>, dec <span class="op">=</span> <span class="st">'.'</span>,
-                    outAnnual <span class="op">=</span> <span class="st">'etp_annual.txt'</span>,
-                    outSummer <span class="op">=</span> <span class="st">'etp_summer.txt'</span><span class="op">)</span>
+  <span class="va">evapotranspiration</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/computeABIMOclimate.html">computeABIMOclimate</a></span><span class="op">(</span>
+  rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">climate</span>,
+  fileName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'raw_climateeng_etp_daily_%s.txt'</span>, 
+                     <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>,
+  skip <span class="op">=</span> <span class="fl">6</span>, sep <span class="op">=</span> <span class="st">''</span>, dec <span class="op">=</span> <span class="st">'.'</span>,
+  outAnnual <span class="op">=</span> <span class="st">'etp_annual.txt'</span>,
+  outSummer <span class="op">=</span> <span class="st">'etp_summer.txt'</span><span class="op">)</span>
 
 <span class="co"># use raw code to compute and assign remaining ABIMO variables manually</span>
 
@@ -254,8 +258,8 @@ Workflow in RStudio:
 <span class="co"># annual rainfall (this can be automatized by making 'computeABIMOclimate'</span>
 <span class="co"># return the multiannual average annual rainfall. care must be taken to exclude</span>
 <span class="co"># incomplete years from the average calculation)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">REGENJA</span> <span class="op">&lt;-</span> <span class="fl">538</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">REGENSO</span> <span class="op">&lt;-</span> <span class="fl">395</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">REGENJA</span> <span class="op">&lt;-</span> <span class="fl">543</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">REGENSO</span> <span class="op">&lt;-</span> <span class="fl">491</span>
 
 <span class="co"># channelization degrees. these are set manually since there is no data</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KANAL</span><span class="op">&lt;-</span> <span class="fl">1</span>
@@ -264,8 +268,8 @@ Workflow in RStudio:
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KAN_STR</span><span class="op">&lt;-</span> <span class="fl">100</span>
 
 <span class="co"># soil field capacity and groundwater level</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FELD_30</span> <span class="op">&lt;-</span> <span class="fl">30</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FELD_150</span> <span class="op">&lt;-</span> <span class="fl">30</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FELD_30</span> <span class="op">&lt;-</span> <span class="fl">35</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FELD_150</span> <span class="op">&lt;-</span> <span class="fl">35</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FLUR</span> <span class="op">&lt;-</span> <span class="fl">10</span>
 
 <span class="co"># select required columns and write out new shapefile</span>
@@ -280,14 +284,13 @@ Workflow in RStudio:
                   <span class="st">'FELD_30'</span>, <span class="st">'FELD_150'</span>, <span class="st">'FLUR'</span><span class="op">)</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">[</span>, <span class="va">requiredCols</span><span class="op">]</span>
 
-<span class="co"># format numbers to 1 decimal place and change decimal separator to comma</span>
-<span class="co"># (ABIMO does not run correctly otherwise)</span>
+<span class="co"># format numbers to 0 decimal places (avoid 'pseudo-accuracy')</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">[</span>, <span class="fl">8</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html">ncol</a></span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span>
   <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">[</span>, <span class="fl">8</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html">ncol</a></span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">)</span><span class="op">]</span>,
   digits <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>
 
-<span class="fu"><a href="https://rdrr.io/r/base/apply.html">apply</a></span><span class="op">(</span>X <span class="op">=</span> <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">[</span><span class="st">'FLGES'</span><span class="op">]</span>, FUN <span class="op">=</span> <span class="va">nchar</span>, MARGIN <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>
-
+<span class="co"># change decimal separator to comma</span>
+<span class="co"># (ABIMO does not run correctly otherwise)</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html">apply</a></span><span class="op">(</span>X<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html">apply</a></span><span class="op">(</span>X<span class="op">=</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span>,
                                          <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,
                                          FUN<span class="op">=</span><span class="va">as.character</span><span class="op">)</span>,
@@ -324,10 +327,10 @@ Please copy to this location"</span>, <span class="va">paths</span><span class="
 <span class="co"># post-process ABIMO output file -&gt; join it with input shape file for </span>
 <span class="co"># visualization in GIS</span>
 <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/postProcessABIMO.html">postProcessABIMO</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>,
-                 nameABIMOin <span class="op">=</span> <span class="va">abimo_inp</span>,
-                 nameABIMOout <span class="op">=</span> <span class="va">abimo_out</span>,
-                 ABIMOjoinedName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">"%s_joined.dbf"</span>, <span class="va">abimo_out</span><span class="op">)</span>
-                <span class="op">)</span>
+                                    nameABIMOin <span class="op">=</span> <span class="va">abimo_inp</span>,
+                                    nameABIMOout <span class="op">=</span> <span class="va">abimo_out</span>,
+                                    ABIMOjoinedName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">"%s_joined.dbf"</span>, <span class="va">abimo_out</span><span class="op">)</span>
+<span class="op">)</span>
 <span class="op">}</span>
 
 <span class="op">}</span></code></pre></div>
