@@ -1,3 +1,5 @@
+install.packages("ecmwfr", repos = "https://cloud.r-project.org")
+
 ### 0) Register for CDS services: https://cds.climate.copernicus.eu/user/register
 
 ### 1) Copy UUID and API KEY: https://cds.climate.copernicus.eu/user
