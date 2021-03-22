@@ -2,7 +2,7 @@
 % Please edit documentation in R/abimo.R
 \name{makeSTR_FLGES}
 \alias{makeSTR_FLGES}
-\title{compute ABIMO variable STR_FLGES}
+\title{compute ABIMO variable STR_FLGES (street area of block area)}
 \usage{
 makeSTR_FLGES(
   rawdir,
@@ -30,5 +30,5 @@ makeSTR_FLGES(
 STR_FLGES
 }
 \description{
-compute ABIMO variable STR_FLGES
+compute ABIMO variable STR_FLGES (street area of block area)
 }

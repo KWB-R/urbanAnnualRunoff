@@ -2,7 +2,7 @@
 % Please edit documentation in R/abimo.R
 \name{makePROBAU}
 \alias{makePROBAU}
-\title{compute ABIMO variable PROBAU}
+\title{compute ABIMO variable PROBAU (covered sealed area)}
 \usage{
 makePROBAU(rawdir, rasterData, overlayName, targetValue)
 }
@@ -19,5 +19,5 @@ makePROBAU(rawdir, rasterData, overlayName, targetValue)
 ???
 }
 \description{
-compute ABIMO variable PROBAU
+compute ABIMO variable PROBAU (covered sealed area)
 }
