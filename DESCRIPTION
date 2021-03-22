@@ -39,10 +39,12 @@ Imports:
 Suggests: 
     covr,
     knitr,
+    kwb.abimo,
     rmarkdown
 VignetteBuilder: 
     knitr
 Remotes: 
+    github::kwb-r/kwb.abimo,
     github::kwb-r/kwb.utils
 Encoding: UTF-8
 LazyData: true

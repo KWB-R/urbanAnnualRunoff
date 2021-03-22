@@ -36,6 +36,8 @@ path_list <- list(
   site = "Beijing",
   data = "WP2_SUW_pollution_<site>",
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
+  abimo_config_original = "<abimo>/config_original.xml",
+  abimo_config_modified = "<abimo>/config.xml",
   abimo_exe = "<abimo>/Abimo3_2.exe",
   gis = "<root_path>/<data>/_DataAnalysis/gis",
   climate = "<root_path>/<data>/_DataAnalysis/climate",
@@ -125,22 +127,56 @@ abimo@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
 # incomplete years from the average calculation. same for summer rainfall
 precipitation <- urbanAnnualRunoff::computeABIMOclimate(
   rawdir = paths$climate,
-  fileName = sprintf('raw_climateeng_precipitation_monthly_%s.txt', 
+  file_inp = sprintf('raw_climateeng_precipitation_monthly_%s.txt', 
                      paths$site),
-  skip = 6, sep = '', dec = '.',
-  outAnnual = 'precipitation_annual.txt',
-  outSummer ='precipitation_summer.txt')
+  file_out = 'precipitation.txt',
+  summer_month_start = 4)
 
 # compute annual and summer ETP. this goes manually into the ABIMO config file
   evapotranspiration <- urbanAnnualRunoff::computeABIMOclimate(
   rawdir = paths$climate,
-  fileName = sprintf('raw_climateeng_etp_daily_%s.txt', 
+  file_inp = sprintf('raw_climateeng_etp_daily_%s.txt', 
                      paths$site),
-  skip = 6, sep = '', dec = '.',
-  outAnnual = 'etp_annual.txt',
-  outSummer = 'etp_summer.txt')
+  file_out = 'evapotranspiration.txt',
+  summer_month_start = 4)
+
+
+### Merge complete years (i.e. 2014-2019 for Beijing)
+climate_data <- dplyr::inner_join(precipitation, evapotranspiration,
+                                  by = "year", 
+                                  suffix = c(".p", ".etp"))
+
 
 # use raw code to compute and assign remaining ABIMO variables manually
+
+# annual rainfall (this can be automatized by making 'computeABIMOclimate'
+# return the multiannual average annual rainfall. care must be taken to exclude
+# incomplete years from the average calculation)
+abimo@data$REGENJA <- mean(climate_data$sum_annual.p)
+abimo@data$REGENSO <- mean(climate_data$sum_summer.p)
+
+kwb.abimo::abimo_xml_evap(file_in = paths$abimo_config_original,
+                          file_out = paths$abimo_config_modified,
+                          line_evap = c(42:46, 49),
+                          evap_annual = mean(climate_data$sum_annual.etp),
+                          evap_summer = mean(climate_data$sum_summer.etp)
+)
+
+# to do: improve kwb.abimo by using xml2 (as approach above currently misses 
+# one line for etp replacement !!!)
+# tmp <- xml2::read_xml(paths$abimo_config_original)
+# 
+# tmp <- xml2::read_xml(paths$abimo_config_original) %>%  xml2::as_list()
+# 
+# section_names <- as.character(sapply(tmp$sections, function(x) attr(x, "name")))
+# 
+# attr(tmp$sections[which(section_names == "PotentielleVerdunstung")], "etp")
+# 
+# xml2::xml_find_all(tmp, "//*[name = 'PotentielleVerdunstung']")
+# baz <- xml2::xml_find_all(tmp, ".//section")
+# rvest::xml_nodes(tmp, "section") %>% 
+#   xml2::xml_attrs("name")
+
 
 # compute ABIMO variable PROVGU (% other impervious areas) as 
 # PROVGU = VG - PROBAU, setting any negative values to 0. this
@@ -175,11 +211,6 @@ abimo@data$TEILBLOCK <- 1
 abimo@data$NUTZUNG <- 21
 abimo@data$TYP <- 38
 
-# annual rainfall (this can be automatized by making 'computeABIMOclimate'
-# return the multiannual average annual rainfall. care must be taken to exclude
-# incomplete years from the average calculation)
-abimo@data$REGENJA <- 543
-abimo@data$REGENSO <- 491
 
 # channelization degrees. based on data provided BEWG (2020-11-03)
 abimo@data$KANAL<- 1
