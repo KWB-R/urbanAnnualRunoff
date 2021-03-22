@@ -38,7 +38,9 @@ path_list <- list(
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
   abimo_exe = "<abimo>/Abimo3_2.exe",
   gis = "<root_path>/<data>/_DataAnalysis/gis",
-  climate = "<root_path>/<data>/_DataAnalysis/climate"
+  climate = "<root_path>/<data>/_DataAnalysis/climate",
+  emissions_input = "<root_path>/<data>/_DataAnalysis/emissions/input",
+  emissions_output = "<root_path>/<data>/_DataAnalysis/emissions/output"
 )
 
 paths <- kwb.utils::resolve(path_list)
@@ -179,15 +181,17 @@ abimo@data$TYP <- 38
 abimo@data$REGENJA <- 543
 abimo@data$REGENSO <- 491
 
-# channelization degrees. these are set manually since there is no data
+# channelization degrees. based on data provided BEWG (2020-11-03)
 abimo@data$KANAL<- 1
-abimo@data$KAN_BEB<- 100
-abimo@data$KAN_VGU<- 100
-abimo@data$KAN_STR<- 100
+abimo@data$KAN_BEB<- 80
+abimo@data$KAN_VGU<- 80
+abimo@data$KAN_STR<- 80
 
-# soil field capacity and groundwater level
-abimo@data$FELD_30 <- 35
-abimo@data$FELD_150 <- 35
+# soil field capacity (provided BEWG on 2020-11-03) and 
+# groundwater level: 10m (data source ???)
+abimo@data$KANAL<- 1 
+abimo@data$FELD_30 <- 20
+abimo@data$FELD_150 <- 20
 abimo@data$FLUR <- 10
 
 # select required columns and write out new shapefile
@@ -241,17 +245,84 @@ message(cat(sprintf("Run ABIMO executable manually:
       
 kwb.utils::hsOpenWindowsExplorer(paths$abimo_exe)
 
+abimo_out_joined <- sprintf('abimo_%sout_joined.dbf', paths$site)
+
 # postprocessing ----------------------------------------------------------------
 # post-process ABIMO output file -> join it with input shape file for 
 # visualization in GIS
 urbanAnnualRunoff::postProcessABIMO(rawdir = paths$abimo,
                                     nameABIMOin = abimo_inp,
                                     nameABIMOout = abimo_out,
-                                    ABIMOjoinedName = sprintf("%s_joined.dbf", abimo_out)
+                                    ABIMOjoinedName = abimo_out_joined
+
 )
 }
 
 }
+
+
+# compute emissions Tongzhou with OgRe AMC (annual mean concentration) database
+
+cDataFile <- file.path(paths$emissions_input, "annual_mean_conc.csv")
+outFile <- file.path(paths$emissions_output, "emissionsTz.shp")
+  
+# grab annual volumes from ABIMO computation
+abimo_joined <- raster::shapefile(x = file.path(paths$abimo, abimo_out_joined), 
+                           stringsAsFactors = FALSE)
+#abimo_joined <- foreign::read.dbf(file.path(paths$abimo, abimo_out_joined))
+
+# grab AMC from OgRe
+x_conc <- read.table(file = cDataFile, 
+                     sep = ";", 
+                     dec = ".", 
+                     stringsAsFactors = FALSE, 
+                     header = TRUE)
+
+
+
+# select substances
+#c_heavy_metals <- x_conc[5:13, 4:ncol(x_conc)]
+#rownames(c_heavy_metals) <- x_conc$VariableName[5:13]
+
+structures <- c("ALT", "NEU", "STR", "EFH", "GEW", "ANDERE")
+heavy_metals <- c("Abfiltrierbare Stoffe", 
+                  "Blei", 
+                  "Cadmium", 
+                  "Chrom", 
+                  "Kupfer", 
+                  "Nickel", 
+                  "Titan", 
+                  "Vanadium", 
+                  "Zink") 
+
+c_heavy_metals_means  <- x_conc %>% 
+  dplyr::filter(VariableName %in% heavy_metals) %>% 
+  dplyr::mutate(mean = mean(dplyr::across(tidyselect::all_of(structures))))
+
+c_heavy_metals <- x_conc %>% 
+  dplyr::filter(VariableName %in% heavy_metals) %>% 
+  kwb.utils::selectColumns(columns = structures) 
+rownames(c_heavy_metals) <- heavy_metals
+
+# average across catchment types
+c_heavy_metals_means <- apply(c_heavy_metals, MARGIN = 1, FUN = mean)
+
+# annual load = V * c 
+# for heavy metals -> l/m2-year * ug/l = ug/m2-year
+# for TSS -> l/m2-year * mg/l = mg/m2-year
+loads <- sapply(X = c_heavy_metals_means,
+                FUN = function(a){
+                  ABIMO$ROW*a/1e3
+                })
+
+# add computed loads to ABIMO dataset
+abimo_joined@data <- cbind(abimo_joined@data,
+                    loads)
+
+# write out joined table output as shapefile
+raster::shapefile(x = abimo_joined, 
+                  filename = outFile, 
+                  overwrite = TRUE)
 
 
 ```
