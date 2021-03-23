@@ -359,35 +359,27 @@ Please copy to this location"</span>, <span class="va">paths</span><span class="
                     <span class="va">abimo_inp_path</span>, 
                     <span class="va">abimo_out</span><span class="op">)</span><span class="op">)</span>
 <span class="op">)</span>
-      
-<span class="fu">kwb.utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.utils/man/hsOpenWindowsExplorer.html">hsOpenWindowsExplorer</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo_exe</span><span class="op">)</span>
-
-<span class="va">abimo_out_joined</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'abimo_%sout_joined.dbf'</span>, <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>
+<span class="op">}</span>      
+<span class="fu">kwb.utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.utils/man/hsOpenWindowsExplorer.html">hsOpenWindowsExplorer</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/basename.html">dirname</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo_exe</span><span class="op">)</span><span class="op">)</span>
 
 <span class="co"># postprocessing ----------------------------------------------------------------</span>
 <span class="co"># post-process ABIMO output file -&gt; join it with input shape file for </span>
 <span class="co"># visualization in GIS</span>
-<span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/postProcessABIMO.html">postProcessABIMO</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>,
-                                    nameABIMOin <span class="op">=</span> <span class="va">abimo_inp</span>,
-                                    nameABIMOout <span class="op">=</span> <span class="va">abimo_out</span>,
-                                    ABIMOjoinedName <span class="op">=</span> <span class="va">abimo_out_joined</span>
-
+<span class="va">abimo_inpout</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/postProcessABIMO.html">postProcessABIMO</a></span><span class="op">(</span>
+  path_input <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>, <span class="va">abimo_inp</span><span class="op">)</span>,
+  path_output <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>, <span class="va">abimo_out</span><span class="op">)</span>
 <span class="op">)</span>
 
-<span class="va">abimo_inpout</span> <span class="op">&lt;-</span> <span class="fu">kwb.abimo</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.abimo/man/abimo_comb_in_out.html">abimo_comb_in_out</a></span><span class="op">(</span>
-  file_ABIMO_out <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>, <span class="va">abimo_out</span><span class="op">)</span>,
-  file_ABIMO_in <span class="op">=</span> <span class="va">abimo_inp_dbf_path</span>
-<span class="op">)</span>
-<span class="op">}</span>
-
-<span class="op">}</span>
+<span class="co"># kwb.abimo::abimo_comb_in_out() works only with DBF as input</span>
+<span class="co"># abimo_inpout &lt;- kwb.abimo::abimo_comb_in_out(</span>
+<span class="co">#   file_ABIMO_out = file.path(paths$abimo, abimo_out),</span>
+<span class="co">#   file_ABIMO_in = abimo_inp_dbf_path</span>
+<span class="co"># )</span>
 
 
 <span class="co"># compute emissions Tongzhou with OgRe AMC (annual mean concentration) database</span>
 
 <span class="va">cDataFile</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">emissions_input</span>, <span class="st">"annual_mean_conc.csv"</span><span class="op">)</span>
-<span class="va">outFile</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">emissions_output</span>, <span class="st">"emissionsTz.shp"</span><span class="op">)</span>
-  
 
 <span class="co"># grab AMC from OgRe</span>
 <span class="va">x_conc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.table</a></span><span class="op">(</span>file <span class="op">=</span> <span class="va">cDataFile</span>, 
@@ -414,24 +406,37 @@ Please copy to this location"</span>, <span class="va">paths</span><span class="
 <span class="co"># average across catchment types</span>
 <span class="va">c_heavy_metals_means</span>  <span class="op">&lt;-</span> <span class="va">x_conc</span> <span class="op">%&gt;%</span> 
   <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">VariableName</span> <span class="op">%in%</span> <span class="va">heavy_metals</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>unit_load <span class="op">=</span> <span class="fu">kwb.utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.utils/man/substSpecialChars.html">substSpecialChars</a></span><span class="op">(</span><span class="va">.data</span><span class="op">$</span><span class="va">UnitsAbbreviation</span><span class="op">)</span> <span class="op">%&gt;%</span>  
+                  <span class="fu">stringr</span><span class="fu">::</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_replace.html">str_replace</a></span><span class="op">(</span><span class="st">"L"</span>, <span class="st">"m2_year"</span><span class="op">)</span>,
+                label_load <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">"%s.%s"</span>, 
+                                     <span class="va">.data</span><span class="op">$</span><span class="va">VariableName</span>, 
+                                     <span class="va">.data</span><span class="op">$</span><span class="va">unit_load</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> 
   <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/rowwise.html">rowwise</a></span><span class="op">(</span><span class="va">VariableID</span><span class="op">)</span> <span class="op">%&gt;%</span> 
   <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>conc_mean <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/c_across.html">c_across</a></span><span class="op">(</span><span class="fu">tidyselect</span><span class="fu">::</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/all_of.html">all_of</a></span><span class="op">(</span><span class="va">structures</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
 
 <span class="co"># annual load = V * c </span>
 <span class="co"># for heavy metals -&gt; l/m2-year * ug/l = ug/m2-year</span>
 <span class="co"># for TSS -&gt; l/m2-year * mg/l = mg/m2-year</span>
-<span class="va">loads</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span><span class="op">(</span>X <span class="op">=</span> <span class="va">c_heavy_metals_means</span><span class="op">$</span><span class="va">conc_mean</span>,
+<span class="va">loads</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind.html">bind_rows</a></span><span class="op">(</span>
+  <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html">setNames</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html">lapply</a></span><span class="op">(</span>X <span class="op">=</span> <span class="va">c_heavy_metals_means</span><span class="op">$</span><span class="va">conc_mean</span>,
                 FUN <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">a</span><span class="op">)</span><span class="op">{</span>
                   <span class="va">abimo_inpout</span><span class="op">$</span><span class="va">ROW</span><span class="op">*</span><span class="va">a</span><span class="op">/</span><span class="fl">1e3</span>
-                <span class="op">}</span><span class="op">)</span>
+                <span class="op">}</span><span class="op">)</span>,
+           nm <span class="op">=</span> <span class="va">c_heavy_metals_means</span><span class="op">$</span><span class="va">label_load</span><span class="op">)</span>
+  <span class="op">)</span>
 
 <span class="co"># add computed loads to ABIMO dataset</span>
-<span class="va">abimo_inpout</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="va">abimo_inpout</span>, <span class="va">loads</span><span class="op">)</span>
+<span class="va">abimo_inpout_emissions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="va">abimo_inpout</span>, <span class="va">loads</span><span class="op">)</span>
 
 <span class="co"># write out joined table output as shapefile</span>
-<span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/shapefile.html">shapefile</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">abimo_inpout</span>, 
+<span class="va">outFile</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">emissions_output</span>, 
+                     <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">"abimo_%s_emissions.shp"</span>, <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span><span class="op">)</span>
+  
+<span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/shapefile.html">shapefile</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">abimo_inpout_emissions</span>, 
                   filename <span class="op">=</span> <span class="va">outFile</span>, 
-                  overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+                  overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+
+<span class="op">}</span></code></pre></div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

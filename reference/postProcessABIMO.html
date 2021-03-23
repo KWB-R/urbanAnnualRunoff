@@ -40,8 +40,7 @@
 
 
 <meta property="og:title" content="abimo: postprocess — postProcessABIMO" />
-<meta property="og:description" content="read dbf results file, join with input shapefile and write
-output shapefile including ABIMO results" />
+<meta property="og:description" content="read dbf results file and joins with input shapefile" />
 
 
 
@@ -133,36 +132,29 @@ output shapefile including ABIMO results" />
     </div>
 
     <div class="ref-description">
-    <p>read dbf results file, join with input shapefile and write
-output shapefile including ABIMO results</p>
+    <p>read dbf results file and joins with input shapefile</p>
     </div>
 
-    <pre class="usage"><span class='fu'>postProcessABIMO</span><span class='op'>(</span><span class='va'>rawdir</span>, <span class='va'>nameABIMOin</span>, <span class='va'>nameABIMOout</span>, <span class='va'>ABIMOjoinedName</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>postProcessABIMO</span><span class='op'>(</span><span class='va'>path_input</span>, <span class='va'>path_output</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>rawdir</th>
-      <td><p>rawdir</p></td>
+      <th>path_input</th>
+      <td><p>path of ABIMO input shapefile</p></td>
     </tr>
     <tr>
-      <th>nameABIMOin</th>
-      <td><p>nameABIMOin</p></td>
-    </tr>
-    <tr>
-      <th>nameABIMOout</th>
-      <td><p>nameABIMOout</p></td>
-    </tr>
-    <tr>
-      <th>ABIMOjoinedName</th>
-      <td><p>ABIMOjoinedName</p></td>
+      <th>abimo_output</th>
+      <td><p>path of ABIMO output DBF file</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>write shapefile with name "ABIMOjoinedName" to "rawdir"</p>
+    
+
+
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
