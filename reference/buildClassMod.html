@@ -186,11 +186,11 @@ further columns.</p></td>
     </tr>
     <tr>
       <th>overlayExists</th>
-      <td><p>if FALSE, the function overlays the ground truth data
+      <td><p>If FALSE, the function overlays the ground truth data
 and the image (time consuming) and saves an R object containing the former's
 spectral signatures with name spectrSigName (overlay object). If TRUE, the
 function will skip this overlay operation and read an existing overlay object
-with name 'spectrSigName'.(default: FALSE)</p></td>
+with name 'spectrSigName'. (default: FALSE)</p></td>
     </tr>
     <tr>
       <th>spectrSigName</th>
@@ -245,7 +245,8 @@ that mtry had a strong influence on predictor variable importance estimates.</p>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>writes a lot of output files to different folders ??? (details!)</p>
+    <p>Writes spectralSignatures (if overlayExists is FALSE) and fitted random
+forest model with name modelName.</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

@@ -137,7 +137,15 @@ https://app.climateengine.org/climateEngine)" />
 https://app.climateengine.org/climateEngine)</p>
     </div>
 
-    <pre class="usage"><span class='fu'>computeABIMOclimate</span><span class='op'>(</span><span class='va'>rawdir</span>, <span class='va'>fileName</span>, <span class='va'>skip</span>, <span class='va'>sep</span>, <span class='va'>dec</span>, <span class='va'>outAnnual</span>, <span class='va'>outSummer</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>computeABIMOclimate</span><span class='op'>(</span>
+  <span class='va'>rawdir</span>,
+  <span class='va'>file_inp</span>,
+  <span class='va'>file_out</span>,
+  summer_month_start <span class='op'>=</span> <span class='fl'>4</span>,
+  skip <span class='op'>=</span> <span class='fl'>6</span>,
+  sep <span class='op'>=</span> <span class='st'>""</span>,
+  dec <span class='op'>=</span> <span class='st'>"."</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -147,34 +155,36 @@ https://app.climateengine.org/climateEngine)</p>
       <td><p>rawdir</p></td>
     </tr>
     <tr>
-      <th>fileName</th>
-      <td><p>fileName</p></td>
+      <th>file_inp</th>
+      <td><p>name of input file</p></td>
+    </tr>
+    <tr>
+      <th>file_out</th>
+      <td><p>name of output file to be written in "raw_dir"</p></td>
+    </tr>
+    <tr>
+      <th>summer_month_start</th>
+      <td><p>number of month where summer half year starts
+(default: 4)</p></td>
     </tr>
     <tr>
       <th>skip</th>
-      <td><p>skip</p></td>
+      <td><p>skip (default: 6)</p></td>
     </tr>
     <tr>
       <th>sep</th>
-      <td><p>sep</p></td>
+      <td><p>sep (default: '')</p></td>
     </tr>
     <tr>
       <th>dec</th>
-      <td><p>dec</p></td>
-    </tr>
-    <tr>
-      <th>outAnnual</th>
-      <td><p>outAnnual</p></td>
-    </tr>
-    <tr>
-      <th>outSummer</th>
-      <td><p>outSummer</p></td>
+      <td><p>dec (default: '.')</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>???</p>
+    <p>data frame with yearly summed measurements (summer half year,
+total year sum) and also text file written to "raw_dir" with "out_file" name</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
