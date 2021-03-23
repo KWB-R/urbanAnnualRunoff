@@ -202,16 +202,12 @@ makeVG <- function(rawdir,
   return(vg)
 }
 
-# read dbf results file, join with input shapefile and write output shapefile
-# including ABIMO results
+# read dbf results file, join with input shapefile
 #' abimo: postprocess
-#' @description read dbf results file, join with input shapefile and write
-#' output shapefile including ABIMO results
-#' @param rawdir rawdir
-#' @param nameABIMOin nameABIMOin
-#' @param nameABIMOout nameABIMOout
-#' @param ABIMOjoinedName ABIMOjoinedName
-#' @return write shapefile with name "ABIMOjoinedName" to "rawdir"
+#' @description read dbf results file and joins with input shapefile
+#' @param path_input path of ABIMO input shapefile
+#' @param abimo_output path of ABIMO output DBF file
+#' @return
 #' @export
 #'
 #' @importFrom foreign read.dbf
@@ -219,21 +215,17 @@ makeVG <- function(rawdir,
 #' @importFrom dplyr left_join
 #' @importFrom magrittr "%>%"
 #'
-postProcessABIMO <- function(rawdir, nameABIMOin,
-                             nameABIMOout, ABIMOjoinedName){
+postProcessABIMO <- function(path_input,
+                             path_output){
 
   # read files
-  ABIMOin <- raster::shapefile(x=file.path(rawdir, nameABIMOin), stringsAsFactors=FALSE)
-  ABIMOout <- foreign::read.dbf(file=file.path(rawdir, nameABIMOout), as.is=TRUE)
-
-  ## set CODE in subcatchment data to padded CODE
-  #ABIMOin$CODE <- padCODE(ABIMOin@data$CODE)
+  ABIMOin <- raster::shapefile(x = path_input, stringsAsFactors=FALSE)
+  ABIMOout <- foreign::read.dbf(file = path_output, as.is=TRUE)
 
   # join
   ABIMOjoined <- ABIMOin
   ABIMOjoined@data <- ABIMOin@data %>%
     dplyr::left_join(ABIMOout, by='CODE')
 
-  # write out joined table output as shapefile
-  raster::shapefile(x=ABIMOjoined, filename=file.path(rawdir, ABIMOjoinedName), overwrite=TRUE)
+  ABIMOjoined
 }

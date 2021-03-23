@@ -278,35 +278,27 @@ message(cat(sprintf("Run ABIMO executable manually:
                     abimo_inp_path, 
                     abimo_out))
 )
-      
-kwb.utils::hsOpenWindowsExplorer(paths$abimo_exe)
-
-abimo_out_joined <- sprintf('abimo_%sout_joined.dbf', paths$site)
+}      
+kwb.utils::hsOpenWindowsExplorer(dirname(paths$abimo_exe))
 
 # postprocessing ----------------------------------------------------------------
 # post-process ABIMO output file -> join it with input shape file for 
 # visualization in GIS
-urbanAnnualRunoff::postProcessABIMO(rawdir = paths$abimo,
-                                    nameABIMOin = abimo_inp,
-                                    nameABIMOout = abimo_out,
-                                    ABIMOjoinedName = abimo_out_joined
-
+abimo_inpout <- urbanAnnualRunoff::postProcessABIMO(
+  path_input = file.path(paths$abimo, abimo_inp),
+  path_output = file.path(paths$abimo, abimo_out)
 )
 
-abimo_inpout <- kwb.abimo::abimo_comb_in_out(
-  file_ABIMO_out = file.path(paths$abimo, abimo_out),
-  file_ABIMO_in = abimo_inp_dbf_path
-)
-}
-
-}
+# kwb.abimo::abimo_comb_in_out() works only with DBF as input
+# abimo_inpout <- kwb.abimo::abimo_comb_in_out(
+#   file_ABIMO_out = file.path(paths$abimo, abimo_out),
+#   file_ABIMO_in = abimo_inp_dbf_path
+# )
 
 
 # compute emissions Tongzhou with OgRe AMC (annual mean concentration) database
 
 cDataFile <- file.path(paths$emissions_input, "annual_mean_conc.csv")
-outFile <- file.path(paths$emissions_output, "emissionsTz.shp")
-  
 
 # grab AMC from OgRe
 x_conc <- read.table(file = cDataFile, 
@@ -345,12 +337,15 @@ loads <- sapply(X = c_heavy_metals_means$conc_mean,
                 })
 
 # add computed loads to ABIMO dataset
-abimo_inpout <- cbind(abimo_inpout, loads)
+abimo_inpout_emissions <- cbind(abimo_inpout, loads)
 
 # write out joined table output as shapefile
-raster::shapefile(x = abimo_inpout, 
+outFile <- file.path(paths$emissions_output, 
+                     sprintf("abimo_%s_emissions.shp", paths$site))
+  
+raster::shapefile(x = abimo_inpout_emissions, 
                   filename = outFile, 
                   overwrite = TRUE)
 
-
+}
 ```
