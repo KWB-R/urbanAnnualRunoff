@@ -150,7 +150,8 @@ buildClassMod <- function(rawdir,
 #' apply model to predict surface type (roof, street, ...)
 #'
 #' @param rawdir path to raw data directory
-#' @param modelName Name of fitted random forest model saved by \code{buildClassMod}
+#' @param modelName Name of fitted random forest model saved by
+#' \code{\link{buildClassMod}}
 #' @param image Image to be classified
 #' @param predName Name of output raster file (classified image)
 #'

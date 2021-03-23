@@ -9,7 +9,8 @@ predictSurfClass(rawdir, modelName, image, predName)
 \arguments{
 \item{rawdir}{path to raw data directory}
 
-\item{modelName}{Name of fitted random forest model saved by \code{buildClassMod}}
+\item{modelName}{Name of fitted random forest model saved by
+\code{\link{buildClassMod}}}
 
 \item{image}{Image to be classified}
 
