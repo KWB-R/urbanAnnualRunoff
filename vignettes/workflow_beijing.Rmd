@@ -241,24 +241,29 @@ abimo@data[, 8:ncol(abimo@data)] <- round(
   abimo@data[, 8:ncol(abimo@data)],
   digits = 0)
 
-# NOT NEEDED FOR ROUNDED DATA 
 # change decimal separator to comma
 # (ABIMO does not run correctly otherwise) 
-# abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
-#                                          c(1, 2),
-#                                          FUN=as.character),
-#                                  c(1, 2),
-#                                  FUN=gsub,
-#                                  pattern="\\.",
-#                                  replacement=","),
-#                            stringsAsFactors = FALSE)
+abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
+                                         c(1, 2),
+                                         FUN=as.character),
+                                 c(1, 2),
+                                 FUN=gsub,
+                                 pattern="\\.",
+                                 replacement=","),
+                           stringsAsFactors = FALSE)
 
 # write ABIMO input table
 abimo_inp <- sprintf('abimo_%s.shp', paths$site)
 abimo_inp_path <- file.path(paths$abimo, abimo_inp)
+
 raster::shapefile(x=abimo, 
                   filename=abimo_inp_path,
                   overwrite=TRUE)
+
+abimo_inp_dbf <- sprintf('abimo_%s.dbf', paths$site)
+abimo_inp_dbf_path <- file.path(paths$abimo, abimo_inp_dbf)
+kwb.abimo::write.dbf.abimo(abimo, 
+                           new_dbf = abimo_inp_dbf_path)
 
 
 # run ABIMO manually in GUI ----------------------------------------------------
@@ -290,7 +295,7 @@ urbanAnnualRunoff::postProcessABIMO(rawdir = paths$abimo,
 
 abimo_inpout <- kwb.abimo::abimo_comb_in_out(
   file_ABIMO_out = file.path(paths$abimo, abimo_out),
-  file_ABIMO_in = file.path(paths$abimo, abimo_inp)
+  file_ABIMO_in = abimo_inp_dbf_path
 )
 }
 
@@ -302,10 +307,6 @@ abimo_inpout <- kwb.abimo::abimo_comb_in_out(
 cDataFile <- file.path(paths$emissions_input, "annual_mean_conc.csv")
 outFile <- file.path(paths$emissions_output, "emissionsTz.shp")
   
-# grab annual volumes from ABIMO computation
-abimo_joined <- raster::shapefile(x = file.path(paths$abimo, abimo_out_joined), 
-                           stringsAsFactors = FALSE)
-#abimo_joined <- foreign::read.dbf(file.path(paths$abimo, abimo_out_joined))
 
 # grab AMC from OgRe
 x_conc <- read.table(file = cDataFile, 
@@ -313,8 +314,6 @@ x_conc <- read.table(file = cDataFile,
                      dec = ".", 
                      stringsAsFactors = FALSE, 
                      header = TRUE)
-
-
 
 # select substances
 #c_heavy_metals <- x_conc[5:13, 4:ncol(x_conc)]
@@ -331,32 +330,25 @@ heavy_metals <- c("Abfiltrierbare Stoffe",
                   "Vanadium", 
                   "Zink") 
 
+# average across catchment types
 c_heavy_metals_means  <- x_conc %>% 
   dplyr::filter(VariableName %in% heavy_metals) %>% 
-  dplyr::mutate(mean = mean(dplyr::across(tidyselect::all_of(structures))))
-
-c_heavy_metals <- x_conc %>% 
-  dplyr::filter(VariableName %in% heavy_metals) %>% 
-  kwb.utils::selectColumns(columns = structures) 
-rownames(c_heavy_metals) <- heavy_metals
-
-# average across catchment types
-c_heavy_metals_means <- apply(c_heavy_metals, MARGIN = 1, FUN = mean)
+  dplyr::rowwise(VariableID) %>% 
+  dplyr::mutate(conc_mean = mean(dplyr::c_across(tidyselect::all_of(structures))))
 
 # annual load = V * c 
 # for heavy metals -> l/m2-year * ug/l = ug/m2-year
 # for TSS -> l/m2-year * mg/l = mg/m2-year
-loads <- sapply(X = c_heavy_metals_means,
+loads <- sapply(X = c_heavy_metals_means$conc_mean,
                 FUN = function(a){
-                  ABIMO$ROW*a/1e3
+                  abimo_inpout$ROW*a/1e3
                 })
 
 # add computed loads to ABIMO dataset
-abimo_joined@data <- cbind(abimo_joined@data,
-                    loads)
+abimo_inpout <- cbind(abimo_inpout, loads)
 
 # write out joined table output as shapefile
-raster::shapefile(x = abimo_joined, 
+raster::shapefile(x = abimo_inpout, 
                   filename = outFile, 
                   overwrite = TRUE)
 
