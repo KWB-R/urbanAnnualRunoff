@@ -34,6 +34,6 @@ remotes::install_github("KWB-R/urbanAnnualRunoff")
 
 ## Documentation
 
-Release: [https://kwb-r.github.io/urbanannualrunoff](https://kwb-r.github.io/urbanannualrunoff)
+Release: [https://kwb-r.github.io/urbanAnnualrunoff](https://kwb-r.github.io/urbanAnnualrunoff)
 
-Development: [https://kwb-r.github.io/urbanannualrunoff/dev](https://kwb-r.github.io/urbanannualrunoff/dev)
+Development: [https://kwb-r.github.io/urbanAnnualrunoff/dev](https://kwb-r.github.io/urbanAnnualrunoff/dev)
