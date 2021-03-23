@@ -202,63 +202,6 @@ Workflow in RStudio:
                         rasterData <span class="op">=</span> <span class="st">'input_impervious.tif'</span>,
                         targetValue <span class="op">=</span> <span class="fl">80</span><span class="op">)</span>
 
-<span class="co"># compute annual and summer rainfall. </span>
-<span class="co"># *** potential enhancement: ***</span>
-<span class="co"># return the multiannual average annual rainfall. care must be taken to exclude</span>
-<span class="co"># incomplete years from the average calculation. same for summer rainfall</span>
-<span class="va">precipitation</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/computeABIMOclimate.html">computeABIMOclimate</a></span><span class="op">(</span>
-  rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">climate</span>,
-  file_inp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'raw_climateeng_precipitation_monthly_%s.txt'</span>, 
-                     <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>,
-  file_out <span class="op">=</span> <span class="st">'precipitation.txt'</span>,
-  summer_month_start <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>
-
-<span class="co"># compute annual and summer ETP. this goes manually into the ABIMO config file</span>
-  <span class="va">evapotranspiration</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/computeABIMOclimate.html">computeABIMOclimate</a></span><span class="op">(</span>
-  rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">climate</span>,
-  file_inp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'raw_climateeng_etp_daily_%s.txt'</span>, 
-                     <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>,
-  file_out <span class="op">=</span> <span class="st">'evapotranspiration.txt'</span>,
-  summer_month_start <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>
-
-
-<span class="co">### Merge complete years (i.e. 2014-2019 for Beijing)</span>
-<span class="va">climate_data</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html">inner_join</a></span><span class="op">(</span><span class="va">precipitation</span>, <span class="va">evapotranspiration</span>,
-                                  by <span class="op">=</span> <span class="st">"year"</span>, 
-                                  suffix <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">".p"</span>, <span class="st">".etp"</span><span class="op">)</span><span class="op">)</span>
-
-
-<span class="co"># use raw code to compute and assign remaining ABIMO variables manually</span>
-
-<span class="co"># annual rainfall (this can be automatized by making 'computeABIMOclimate'</span>
-<span class="co"># return the multiannual average annual rainfall. care must be taken to exclude</span>
-<span class="co"># incomplete years from the average calculation)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">REGENJA</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="va">climate_data</span><span class="op">$</span><span class="va">sum_annual.p</span><span class="op">)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">REGENSO</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="va">climate_data</span><span class="op">$</span><span class="va">sum_summer.p</span><span class="op">)</span>
-
-<span class="fu">kwb.abimo</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.abimo/man/abimo_xml_evap.html">abimo_xml_evap</a></span><span class="op">(</span>file_in <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">abimo_config_original</span>,
-                          file_out <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">abimo_config_modified</span>,
-                          line_evap <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">42</span><span class="op">:</span><span class="fl">46</span>, <span class="fl">49</span><span class="op">)</span>,
-                          evap_annual <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="va">climate_data</span><span class="op">$</span><span class="va">sum_annual.etp</span><span class="op">)</span>,
-                          evap_summer <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="va">climate_data</span><span class="op">$</span><span class="va">sum_summer.etp</span><span class="op">)</span>
-<span class="op">)</span>
-
-<span class="co"># to do: improve kwb.abimo by using xml2 (as approach above currently misses </span>
-<span class="co"># one line for etp replacement !!!)</span>
-<span class="co"># tmp &lt;- xml2::read_xml(paths$abimo_config_original)</span>
-<span class="co"># </span>
-<span class="co"># tmp &lt;- xml2::read_xml(paths$abimo_config_original) %&gt;%  xml2::as_list()</span>
-<span class="co"># </span>
-<span class="co"># section_names &lt;- as.character(sapply(tmp$sections, function(x) attr(x, "name")))</span>
-<span class="co"># </span>
-<span class="co"># attr(tmp$sections[which(section_names == "PotentielleVerdunstung")], "etp")</span>
-<span class="co"># </span>
-<span class="co"># xml2::xml_find_all(tmp, "//*[name = 'PotentielleVerdunstung']")</span>
-<span class="co"># baz &lt;- xml2::xml_find_all(tmp, ".//section")</span>
-<span class="co"># rvest::xml_nodes(tmp, "section") %&gt;% </span>
-<span class="co">#   xml2::xml_attrs("name")</span>
-
-
 <span class="co"># compute ABIMO variable PROVGU (% other impervious areas) as </span>
 <span class="co"># PROVGU = VG - PROBAU, setting any negative values to 0. this</span>
 <span class="co"># happens for only &lt;10% of subcatchments, and results mainly from</span>
@@ -268,6 +211,8 @@ Workflow in RStudio:
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROVGU</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html">ifelse</a></span><span class="op">(</span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VG</span> <span class="op">-</span> <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROBAU</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span>,
                             <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VG</span> <span class="op">-</span> <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROBAU</span>,
                             <span class="fl">0</span><span class="op">)</span>
+
+<span class="co"># use raw code to compute and assign remaining ABIMO variables manually</span>
 
 <span class="co"># % imperviousness streets</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VGSTRASSE</span> <span class="op">&lt;-</span> <span class="fl">100</span>
@@ -289,7 +234,12 @@ Workflow in RStudio:
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">STAGEB</span> <span class="op">&lt;-</span> <span class="fl">1</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">BLOCK</span> <span class="op">&lt;-</span> <span class="fl">1</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">TEILBLOCK</span> <span class="op">&lt;-</span> <span class="fl">1</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">NUTZUNG</span> <span class="op">&lt;-</span> <span class="fl">21</span>
+<span class="co"># NUTZUNG = 21 (mixed area I: residential, trade, services)</span>
+<span class="co"># https://www.stadtentwicklung.berlin.de/umwelt/umweltatlas/download/goedecke_et_al_abimo2019_doku.pdf#page=15</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">NUTZUNG</span> <span class="op">&lt;-</span> <span class="fl">21</span> 
+<span class="co"># TYP = 38 (mixed area, mainly handicrafts and small businesses, with dense#</span>
+<span class="co">#           development)  </span>
+<span class="co"># https://www.stadtentwicklung.berlin.de/umwelt/umweltatlas/download/goedecke_et_al_abimo2019_doku.pdf#page=22</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">TYP</span> <span class="op">&lt;-</span> <span class="fl">38</span>
 
 
@@ -306,11 +256,60 @@ Workflow in RStudio:
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FELD_150</span> <span class="op">&lt;-</span> <span class="fl">20</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FLUR</span> <span class="op">&lt;-</span> <span class="fl">10</span>
 
+<span class="co"># compute annual and summer rainfall. </span>
+<span class="co"># *** potential enhancement: ***</span>
+<span class="co"># return the multiannual average annual rainfall. care must be taken to exclude</span>
+<span class="co"># incomplete years from the average calculation. same for summer rainfall</span>
+<span class="va">precipitation</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/computeABIMOclimate.html">computeABIMOclimate</a></span><span class="op">(</span>
+  rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">climate</span>,
+  file_inp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'raw_climateeng_precipitation_monthly_%s.txt'</span>, 
+                     <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>,
+  file_out <span class="op">=</span> <span class="st">'precipitation.txt'</span>,
+  summer_month_start <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>
+
+<span class="co"># compute annual and summer ETP. this goes automatically into the </span>
+<span class="co"># ABIMO config file by using kwb.abimo::abimo_xml_evap() </span>
+  <span class="va">evapotranspiration</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/computeABIMOclimate.html">computeABIMOclimate</a></span><span class="op">(</span>
+  rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">climate</span>,
+  file_inp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'raw_climateeng_etp_daily_%s.txt'</span>, 
+                     <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>,
+  file_out <span class="op">=</span> <span class="st">'evapotranspiration.txt'</span>,
+  summer_month_start <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>
+
+
+<span class="co">### Merge complete years (i.e. 2014-2019 for Beijing)</span>
+<span class="va">climate_data</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html">inner_join</a></span><span class="op">(</span><span class="va">precipitation</span>, <span class="va">evapotranspiration</span>,
+                                  by <span class="op">=</span> <span class="st">"year"</span>, 
+                                  suffix <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">".p"</span>, <span class="st">".etp"</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span>  
+  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html">across</a></span><span class="op">(</span><span class="fu">tidyselect</span><span class="fu">::</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html">ends_with</a></span><span class="op">(</span><span class="st">"p"</span><span class="op">)</span>, <span class="va">round</span><span class="op">)</span><span class="op">)</span>
+
+
+<span class="co"># annual rainfall (this can be automatized by making 'computeABIMOclimate'</span>
+<span class="co"># return the multiannual average annual rainfall. care must be taken to exclude</span>
+<span class="co"># incomplete years from the average calculation)</span>
+<span class="va">round_mean</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">values</span><span class="op">)</span> <span class="op">{</span>
+  <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="va">values</span><span class="op">)</span>, digits  <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>
+<span class="op">}</span>
+
+<span class="co">### Mean precipitation value for period 2014-2019</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">REGENJA</span> <span class="op">&lt;-</span> <span class="fu">round_mean</span><span class="op">(</span><span class="va">climate_data</span><span class="op">$</span><span class="va">sum_annual.p</span><span class="op">)</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">REGENSO</span> <span class="op">&lt;-</span> <span class="fu">round_mean</span><span class="op">(</span><span class="va">climate_data</span><span class="op">$</span><span class="va">sum_summer.p</span><span class="op">)</span>
+
+<span class="co">### Mean evapotranspiration value for period 2014-2019</span>
+<span class="fu">kwb.abimo</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.abimo/man/abimo_xml_evap.html">abimo_xml_evap</a></span><span class="op">(</span>
+  file_in <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">abimo_config_original</span>,
+  file_out <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">abimo_config_modified</span>,
+  evap_annual <span class="op">=</span> <span class="fu">round_mean</span><span class="op">(</span><span class="va">climate_data</span><span class="op">$</span><span class="va">sum_annual.etp</span><span class="op">)</span>,
+  evap_summer <span class="op">=</span> <span class="fu">round_mean</span><span class="op">(</span><span class="va">climate_data</span><span class="op">$</span><span class="va">sum_summer.etp</span><span class="op">)</span>
+<span class="op">)</span>
+
+<span class="co">### Check modified ABIMO config.xml</span>
+<span class="fu">kwb.utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.utils/man/hsOpenWindowsExplorer.html">hsOpenWindowsExplorer</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo_config_modified</span><span class="op">)</span>
+
 <span class="co"># select required columns and write out new shapefile</span>
-<span class="va">requiredCols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">'CODE'</span>, <span class="st">'BEZIRK'</span>, <span class="st">'STAGEB'</span>, <span class="st">'BLOCK'</span>, <span class="st">'TEILBLOCK'</span>,
-                  <span class="st">'NUTZUNG'</span>, <span class="st">'TYP'</span>,
-                  <span class="st">'FLGES'</span>, <span class="st">'STR_FLGES'</span>,
-                  <span class="st">'PROBAU'</span>, <span class="st">'PROVGU'</span>, <span class="st">'VGSTRASSE'</span>,
+<span class="va">requiredCols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">'CODE'</span>, <span class="st">'BEZIRK'</span>, <span class="st">'STAGEB'</span>, <span class="st">'BLOCK'</span>, 
+                  <span class="st">'TEILBLOCK'</span>, <span class="st">'NUTZUNG'</span>, <span class="st">'TYP'</span>, <span class="st">'FLGES'</span>, 
+                  <span class="st">'STR_FLGES'</span>, <span class="st">'PROBAU'</span>, <span class="st">'PROVGU'</span>, <span class="st">'VGSTRASSE'</span>,
                   <span class="st">'BELAG1'</span>, <span class="st">'BELAG2'</span>, <span class="st">'BELAG3'</span>, <span class="st">'BELAG4'</span>,
                   <span class="st">'STR_BELAG1'</span>, <span class="st">'STR_BELAG2'</span>, <span class="st">'STR_BELAG3'</span>, <span class="st">'STR_BELAG4'</span>,
                   <span class="st">'KAN_BEB'</span>, <span class="st">'KAN_VGU'</span>, <span class="st">'KAN_STR'</span>,
@@ -324,7 +323,7 @@ Workflow in RStudio:
   digits <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>
 
 <span class="co"># change decimal separator to comma</span>
-<span class="co"># (ABIMO does not run correctly otherwise)</span>
+<span class="co"># (ABIMO does not run correctly otherwise) </span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html">apply</a></span><span class="op">(</span>X<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html">apply</a></span><span class="op">(</span>X<span class="op">=</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span>,
                                          <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,
                                          FUN<span class="op">=</span><span class="va">as.character</span><span class="op">)</span>,
@@ -337,9 +336,15 @@ Workflow in RStudio:
 <span class="co"># write ABIMO input table</span>
 <span class="va">abimo_inp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'abimo_%s.shp'</span>, <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>
 <span class="va">abimo_inp_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>, <span class="va">abimo_inp</span><span class="op">)</span>
+
 <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/shapefile.html">shapefile</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">abimo</span>, 
                   filename<span class="op">=</span><span class="va">abimo_inp_path</span>,
                   overwrite<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>
+
+<span class="va">abimo_inp_dbf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'abimo_%s.dbf'</span>, <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>
+<span class="va">abimo_inp_dbf_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>, <span class="va">abimo_inp_dbf</span><span class="op">)</span>
+<span class="fu">kwb.abimo</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.abimo/man/write.dbf.abimo.html">write.dbf.abimo</a></span><span class="op">(</span><span class="va">abimo</span>, 
+                           new_dbf <span class="op">=</span> <span class="va">abimo_inp_dbf_path</span><span class="op">)</span>
 
 
 <span class="co"># run ABIMO manually in GUI ----------------------------------------------------</span>
@@ -368,6 +373,11 @@ Please copy to this location"</span>, <span class="va">paths</span><span class="
                                     ABIMOjoinedName <span class="op">=</span> <span class="va">abimo_out_joined</span>
 
 <span class="op">)</span>
+
+<span class="va">abimo_inpout</span> <span class="op">&lt;-</span> <span class="fu">kwb.abimo</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.abimo/man/abimo_comb_in_out.html">abimo_comb_in_out</a></span><span class="op">(</span>
+  file_ABIMO_out <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>, <span class="va">abimo_out</span><span class="op">)</span>,
+  file_ABIMO_in <span class="op">=</span> <span class="va">abimo_inp_dbf_path</span>
+<span class="op">)</span>
 <span class="op">}</span>
 
 <span class="op">}</span>
@@ -378,10 +388,6 @@ Please copy to this location"</span>, <span class="va">paths</span><span class="
 <span class="va">cDataFile</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">emissions_input</span>, <span class="st">"annual_mean_conc.csv"</span><span class="op">)</span>
 <span class="va">outFile</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">emissions_output</span>, <span class="st">"emissionsTz.shp"</span><span class="op">)</span>
   
-<span class="co"># grab annual volumes from ABIMO computation</span>
-<span class="va">abimo_joined</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/shapefile.html">shapefile</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>, <span class="va">abimo_out_joined</span><span class="op">)</span>, 
-                           stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>
-<span class="co">#abimo_joined &lt;- foreign::read.dbf(file.path(paths$abimo, abimo_out_joined))</span>
 
 <span class="co"># grab AMC from OgRe</span>
 <span class="va">x_conc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.table</a></span><span class="op">(</span>file <span class="op">=</span> <span class="va">cDataFile</span>, 
@@ -389,8 +395,6 @@ Please copy to this location"</span>, <span class="va">paths</span><span class="
                      dec <span class="op">=</span> <span class="st">"."</span>, 
                      stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span>, 
                      header <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-
-
 
 <span class="co"># select substances</span>
 <span class="co">#c_heavy_metals &lt;- x_conc[5:13, 4:ncol(x_conc)]</span>
@@ -407,32 +411,25 @@ Please copy to this location"</span>, <span class="va">paths</span><span class="
                   <span class="st">"Vanadium"</span>, 
                   <span class="st">"Zink"</span><span class="op">)</span> 
 
+<span class="co"># average across catchment types</span>
 <span class="va">c_heavy_metals_means</span>  <span class="op">&lt;-</span> <span class="va">x_conc</span> <span class="op">%&gt;%</span> 
   <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">VariableName</span> <span class="op">%in%</span> <span class="va">heavy_metals</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>mean <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html">across</a></span><span class="op">(</span><span class="fu">tidyselect</span><span class="fu">::</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/all_of.html">all_of</a></span><span class="op">(</span><span class="va">structures</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
-
-<span class="va">c_heavy_metals</span> <span class="op">&lt;-</span> <span class="va">x_conc</span> <span class="op">%&gt;%</span> 
-  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">VariableName</span> <span class="op">%in%</span> <span class="va">heavy_metals</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu">kwb.utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.utils/man/selectColumns.html">selectColumns</a></span><span class="op">(</span>columns <span class="op">=</span> <span class="va">structures</span><span class="op">)</span> 
-<span class="fu"><a href="https://rdrr.io/r/base/colnames.html">rownames</a></span><span class="op">(</span><span class="va">c_heavy_metals</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">heavy_metals</span>
-
-<span class="co"># average across catchment types</span>
-<span class="va">c_heavy_metals_means</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html">apply</a></span><span class="op">(</span><span class="va">c_heavy_metals</span>, MARGIN <span class="op">=</span> <span class="fl">1</span>, FUN <span class="op">=</span> <span class="va">mean</span><span class="op">)</span>
+  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/rowwise.html">rowwise</a></span><span class="op">(</span><span class="va">VariableID</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>conc_mean <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/c_across.html">c_across</a></span><span class="op">(</span><span class="fu">tidyselect</span><span class="fu">::</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/all_of.html">all_of</a></span><span class="op">(</span><span class="va">structures</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
 
 <span class="co"># annual load = V * c </span>
 <span class="co"># for heavy metals -&gt; l/m2-year * ug/l = ug/m2-year</span>
 <span class="co"># for TSS -&gt; l/m2-year * mg/l = mg/m2-year</span>
-<span class="va">loads</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span><span class="op">(</span>X <span class="op">=</span> <span class="va">c_heavy_metals_means</span>,
+<span class="va">loads</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span><span class="op">(</span>X <span class="op">=</span> <span class="va">c_heavy_metals_means</span><span class="op">$</span><span class="va">conc_mean</span>,
                 FUN <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">a</span><span class="op">)</span><span class="op">{</span>
-                  <span class="va">ABIMO</span><span class="op">$</span><span class="va">ROW</span><span class="op">*</span><span class="va">a</span><span class="op">/</span><span class="fl">1e3</span>
+                  <span class="va">abimo_inpout</span><span class="op">$</span><span class="va">ROW</span><span class="op">*</span><span class="va">a</span><span class="op">/</span><span class="fl">1e3</span>
                 <span class="op">}</span><span class="op">)</span>
 
 <span class="co"># add computed loads to ABIMO dataset</span>
-<span class="va">abimo_joined</span><span class="op">@</span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="va">abimo_joined</span><span class="op">@</span><span class="va">data</span>,
-                    <span class="va">loads</span><span class="op">)</span>
+<span class="va">abimo_inpout</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="va">abimo_inpout</span>, <span class="va">loads</span><span class="op">)</span>
 
 <span class="co"># write out joined table output as shapefile</span>
-<span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/shapefile.html">shapefile</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">abimo_joined</span>, 
+<span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/shapefile.html">shapefile</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">abimo_inpout</span>, 
                   filename <span class="op">=</span> <span class="va">outFile</span>, 
                   overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
   </div>
