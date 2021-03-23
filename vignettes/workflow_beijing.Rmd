@@ -121,55 +121,6 @@ abimo@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
                         rasterData = 'input_impervious.tif',
                         targetValue = 80)
 
-# compute annual and summer rainfall. 
-# *** potential enhancement: ***
-# return the multiannual average annual rainfall. care must be taken to exclude
-# incomplete years from the average calculation. same for summer rainfall
-precipitation <- urbanAnnualRunoff::computeABIMOclimate(
-  rawdir = paths$climate,
-  file_inp = sprintf('raw_climateeng_precipitation_monthly_%s.txt', 
-                     paths$site),
-  file_out = 'precipitation.txt',
-  summer_month_start = 4)
-
-# compute annual and summer ETP. this goes manually into the ABIMO config file
-  evapotranspiration <- urbanAnnualRunoff::computeABIMOclimate(
-  rawdir = paths$climate,
-  file_inp = sprintf('raw_climateeng_etp_daily_%s.txt', 
-                     paths$site),
-  file_out = 'evapotranspiration.txt',
-  summer_month_start = 4)
-
-
-### Merge complete years (i.e. 2014-2019 for Beijing)
-climate_data <- dplyr::inner_join(precipitation, evapotranspiration,
-                                  by = "year", 
-                                  suffix = c(".p", ".etp")) %>%  
-  dplyr::mutate(dplyr::across(tidyselect::ends_with("p"), round))
-
-
-# use raw code to compute and assign remaining ABIMO variables manually
-
-# annual rainfall (this can be automatized by making 'computeABIMOclimate'
-# return the multiannual average annual rainfall. care must be taken to exclude
-# incomplete years from the average calculation)
-round_mean <- function(values) {
-  round(mean(values), digits  = 0)
-}
-
-abimo@data$REGENJA <- round_mean(climate_data$sum_annual.p)
-abimo@data$REGENSO <- round_mean(climate_data$sum_summer.p)
-
-kwb.abimo::abimo_xml_evap(
-  file_in = paths$abimo_config_original,
-  file_out = paths$abimo_config_modified,
-  evap_annual = round_mean(climate_data$sum_annual.etp),
-  evap_summer = round_mean(climate_data$sum_summer.etp)
-)
-
-### Check modified ABIMO config.xml
-kwb.utils::hsOpenWindowsExplorer(paths$abimo_config_modified)
-
 # compute ABIMO variable PROVGU (% other impervious areas) as 
 # PROVGU = VG - PROBAU, setting any negative values to 0. this
 # happens for only <10% of subcatchments, and results mainly from
@@ -179,6 +130,8 @@ kwb.utils::hsOpenWindowsExplorer(paths$abimo_config_modified)
 abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
                             abimo@data$VG - abimo@data$PROBAU,
                             0)
+
+# use raw code to compute and assign remaining ABIMO variables manually
 
 # % imperviousness streets
 abimo@data$VGSTRASSE <- 100
@@ -222,11 +175,60 @@ abimo@data$FELD_30 <- 20
 abimo@data$FELD_150 <- 20
 abimo@data$FLUR <- 10
 
+# compute annual and summer rainfall. 
+# *** potential enhancement: ***
+# return the multiannual average annual rainfall. care must be taken to exclude
+# incomplete years from the average calculation. same for summer rainfall
+precipitation <- urbanAnnualRunoff::computeABIMOclimate(
+  rawdir = paths$climate,
+  file_inp = sprintf('raw_climateeng_precipitation_monthly_%s.txt', 
+                     paths$site),
+  file_out = 'precipitation.txt',
+  summer_month_start = 4)
+
+# compute annual and summer ETP. this goes automatically into the 
+# ABIMO config file by using kwb.abimo::abimo_xml_evap() 
+  evapotranspiration <- urbanAnnualRunoff::computeABIMOclimate(
+  rawdir = paths$climate,
+  file_inp = sprintf('raw_climateeng_etp_daily_%s.txt', 
+                     paths$site),
+  file_out = 'evapotranspiration.txt',
+  summer_month_start = 4)
+
+
+### Merge complete years (i.e. 2014-2019 for Beijing)
+climate_data <- dplyr::inner_join(precipitation, evapotranspiration,
+                                  by = "year", 
+                                  suffix = c(".p", ".etp")) %>%  
+  dplyr::mutate(dplyr::across(tidyselect::ends_with("p"), round))
+
+
+# annual rainfall (this can be automatized by making 'computeABIMOclimate'
+# return the multiannual average annual rainfall. care must be taken to exclude
+# incomplete years from the average calculation)
+round_mean <- function(values) {
+  round(mean(values), digits  = 0)
+}
+
+### Mean precipitation value for period 2014-2019
+abimo@data$REGENJA <- round_mean(climate_data$sum_annual.p)
+abimo@data$REGENSO <- round_mean(climate_data$sum_summer.p)
+
+### Mean evapotranspiration value for period 2014-2019
+kwb.abimo::abimo_xml_evap(
+  file_in = paths$abimo_config_original,
+  file_out = paths$abimo_config_modified,
+  evap_annual = round_mean(climate_data$sum_annual.etp),
+  evap_summer = round_mean(climate_data$sum_summer.etp)
+)
+
+### Check modified ABIMO config.xml
+kwb.utils::hsOpenWindowsExplorer(paths$abimo_config_modified)
+
 # select required columns and write out new shapefile
-requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 'TEILBLOCK',
-                  'NUTZUNG', 'TYP',
-                  'FLGES', 'STR_FLGES',
-                  'PROBAU', 'PROVGU', 'VGSTRASSE',
+requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 
+                  'TEILBLOCK', 'NUTZUNG', 'TYP', 'FLGES', 
+                  'STR_FLGES', 'PROBAU', 'PROVGU', 'VGSTRASSE',
                   'BELAG1', 'BELAG2', 'BELAG3', 'BELAG4',
                   'STR_BELAG1', 'STR_BELAG2', 'STR_BELAG3', 'STR_BELAG4',
                   'KAN_BEB', 'KAN_VGU', 'KAN_STR',
@@ -284,6 +286,11 @@ urbanAnnualRunoff::postProcessABIMO(rawdir = paths$abimo,
                                     nameABIMOout = abimo_out,
                                     ABIMOjoinedName = abimo_out_joined
 
+)
+
+abimo_inpout <- kwb.abimo::abimo_comb_in_out(
+  file_ABIMO_out = file.path(paths$abimo, abimo_out),
+  file_ABIMO_in = file.path(paths$abimo, abimo_inp)
 )
 }
 
