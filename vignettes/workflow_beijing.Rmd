@@ -325,16 +325,24 @@ heavy_metals <- c("Abfiltrierbare Stoffe",
 # average across catchment types
 c_heavy_metals_means  <- x_conc %>% 
   dplyr::filter(VariableName %in% heavy_metals) %>% 
+  dplyr::mutate(unit_load = kwb.utils::substSpecialChars(.data$UnitsAbbreviation) %>%  
+                  stringr::str_replace("L", "m2_year"),
+                label_load = sprintf("%s.%s", 
+                                     .data$VariableName, 
+                                     .data$unit_load)) %>% 
   dplyr::rowwise(VariableID) %>% 
   dplyr::mutate(conc_mean = mean(dplyr::c_across(tidyselect::all_of(structures))))
 
 # annual load = V * c 
 # for heavy metals -> l/m2-year * ug/l = ug/m2-year
 # for TSS -> l/m2-year * mg/l = mg/m2-year
-loads <- sapply(X = c_heavy_metals_means$conc_mean,
+loads <- dplyr::bind_rows(
+  setNames(lapply(X = c_heavy_metals_means$conc_mean,
                 FUN = function(a){
                   abimo_inpout$ROW*a/1e3
-                })
+                }),
+           nm = c_heavy_metals_means$label_load)
+  )
 
 # add computed loads to ABIMO dataset
 abimo_inpout_emissions <- cbind(abimo_inpout, loads)
