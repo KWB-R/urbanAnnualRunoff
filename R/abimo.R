@@ -226,18 +226,8 @@ postProcessABIMO <- function(rawdir, nameABIMOin,
   ABIMOin <- raster::shapefile(x=file.path(rawdir, nameABIMOin), stringsAsFactors=FALSE)
   ABIMOout <- foreign::read.dbf(file=file.path(rawdir, nameABIMOout), as.is=TRUE)
 
-  # change decimal separator from comma to point
-  ABIMOin@data <- as.data.frame(apply(X=apply(X=ABIMOin@data,
-                                              c(1, 2),
-                                              FUN=gsub,
-                                              pattern=',',
-                                              replacement='.'),
-                                      c(1, 2),
-                                      FUN=as.numeric),
-                                stringsAsFactors = FALSE)
-
-  # set CODE in subcatchment data to padded CODE
-  ABIMOin$CODE <- padCODE(ABIMOin@data$CODE)
+  ## set CODE in subcatchment data to padded CODE
+  #ABIMOin$CODE <- padCODE(ABIMOin@data$CODE)
 
   # join
   ABIMOjoined <- ABIMOin
