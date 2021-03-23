@@ -13,19 +13,21 @@ makeOverlay(
 )
 }
 \arguments{
-\item{rawdir}{rawdir}
+\item{rawdir}{Path to data directory.}
 
-\item{rasterData}{rasterData}
+\item{rasterData}{Name of raster file containing classified image.}
 
-\item{subcatchmSPobject}{subcatchmSPobject}
+\item{subcatchmSPobject}{Spatial dataset containing subcatchment polygons
+(ABIMO Blockteilflächen) (sp object type, R package sp).}
 
-\item{overlayName}{overlayName}
+\item{overlayName}{Name of output overlay object.}
 
-\item{subcatchmNamesCol}{subcatchmNamesCol}
+\item{subcatchmNamesCol}{Name of column in the attribute table of
+subcatchmSPobject that contains the subcatchment identifiers. This
+is used for naming the elements of the resulting list}
 }
 \value{
 save overlay as .Rdata in directory "rawdir" with filename defined in
-parameter "overlayName"
 }
 \description{
 spatial overlay of subcatchments and raster holding information required by ABIMO

@@ -1,4 +1,4 @@
-# image segmentation with random forest based on spectral signatures
+# image segmentation for urban surfaces with random forest based on spectral signatures
 
 #' build image classification model (random forest)
 #' @description Wrapper function for fitting a random forest using a multi-band
@@ -16,11 +16,11 @@
 #' further columns.
 #' @param groundTruthValues list with key value pairs (default: list('roof' = 1,
 #' 'street' = 2, 'pervious' = 3, 'shadow' = 4, 'water' = 5))
-#' @param overlayExists if FALSE, the function overlays the ground truth data
+#' @param overlayExists If FALSE, the function overlays the ground truth data
 #' and the image (time consuming) and saves an R object containing the former's
 #' spectral signatures with name spectrSigName (overlay object). If TRUE, the
 #' function will skip this overlay operation and read an existing overlay object
-#' with name 'spectrSigName'.(default: FALSE)
+#' with name 'spectrSigName'. (default: FALSE)
 #' @param spectrSigName File name of overlay object, either for saving a new or
 #' load an existing file.
 #' @param modelName File name for saving the fitted random forest model
@@ -47,7 +47,8 @@
 #' @param cvrepeats number of repeats in repeated cross validation (caret),
 #' (default: 2)
 #'
-#' @return writes a lot of output files to different folders ??? (details!)
+#' @return Writes spectralSignatures (if overlayExists is FALSE) and fitted random
+#' forest model with name modelName.
 #' @export
 #' @importFrom caret createFolds train trainControl
 #' @importFrom doParallel registerDoParallel
@@ -149,11 +150,11 @@ buildClassMod <- function(rawdir,
 #' apply model to predict surface type (roof, street, ...)
 #'
 #' @param rawdir path to raw data directory
-#' @param modelName modelName
-#' @param image image
-#' @param predName name of prediction file
+#' @param modelName Name of fitted random forest model saved by \code{buildClassMod}
+#' @param image Image to be classified
+#' @param predName Name of output raster file (classified image)
 #'
-#' @return write raster in "rawdir" with file name "predName"
+#' @return Writes raster in "rawdir" with file name "predName"
 #' @export
 #' @importFrom raster brick predict writeRaster
 #'

@@ -9,14 +9,14 @@ predictSurfClass(rawdir, modelName, image, predName)
 \arguments{
 \item{rawdir}{path to raw data directory}
 
-\item{modelName}{modelName}
+\item{modelName}{Name of fitted random forest model saved by \code{buildClassMod}}
 
-\item{image}{image}
+\item{image}{Image to be classified}
 
-\item{predName}{name of prediction file}
+\item{predName}{Name of output raster file (classified image)}
 }
 \value{
-write raster in "rawdir" with file name "predName"
+Writes raster in "rawdir" with file name "predName"
 }
 \description{
 apply model to predict surface type (roof, street, ...)

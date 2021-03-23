@@ -35,11 +35,11 @@ further columns.}
 \item{groundTruthValues}{list with key value pairs (default: list('roof' = 1,
 'street' = 2, 'pervious' = 3, 'shadow' = 4, 'water' = 5))}
 
-\item{overlayExists}{if FALSE, the function overlays the ground truth data
+\item{overlayExists}{If FALSE, the function overlays the ground truth data
 and the image (time consuming) and saves an R object containing the former's
 spectral signatures with name spectrSigName (overlay object). If TRUE, the
 function will skip this overlay operation and read an existing overlay object
-with name 'spectrSigName'.(default: FALSE)}
+with name 'spectrSigName'. (default: FALSE)}
 
 \item{spectrSigName}{File name of overlay object, either for saving a new or
 load an existing file.}
@@ -75,7 +75,8 @@ that mtry had a strong influence on predictor variable importance estimates.}
 (default: 2)}
 }
 \value{
-writes a lot of output files to different folders ??? (details!)
+Writes spectralSignatures (if overlayExists is FALSE) and fitted random
+forest model with name modelName.
 }
 \description{
 Wrapper function for fitting a random forest using a multi-band

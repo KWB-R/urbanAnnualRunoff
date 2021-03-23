@@ -1,15 +1,15 @@
 #' spatial overlay of subcatchments and raster holding information required by ABIMO
 #'
-#' @param rawdir rawdir
-#' @param rasterData rasterData
-#' @param subcatchmSPobject subcatchmSPobject
-#' @param overlayName overlayName
-#' @param subcatchmNamesCol subcatchmNamesCol
-#'
+#' @param rawdir Path to data directory.
+#' @param rasterData Name of raster file containing classified image.
+#' @param subcatchmSPobject Spatial dataset containing subcatchment polygons
+#' (ABIMO Blockteilflächen) (sp object type, R package sp).
+#' @param overlayName Name of output overlay object.
+#' @param subcatchmNamesCol Name of column in the attribute table of
+#' subcatchmSPobject that contains the subcatchment identifiers. This
+#' is used for naming the elements of the resulting list
 #' @return save overlay as .Rdata in directory "rawdir" with filename defined in
-#' parameter "overlayName"
 #' @export
-#'
 #' @importFrom raster extract raster
 makeOverlay <- function(rawdir, rasterData, subcatchmSPobject,
                         overlayName, subcatchmNamesCol){
