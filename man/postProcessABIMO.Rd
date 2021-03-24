@@ -12,7 +12,8 @@ postProcessABIMO(path_input, path_output)
 \item{abimo_output}{path of ABIMO output DBF file}
 }
 \value{
-
+joined SpatialPolygonsDataFrame with ABIMO input and
+output
 }
 \description{
 read dbf results file and joins with input shapefile

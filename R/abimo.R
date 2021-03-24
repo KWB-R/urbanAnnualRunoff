@@ -207,7 +207,8 @@ makeVG <- function(rawdir,
 #' @description read dbf results file and joins with input shapefile
 #' @param path_input path of ABIMO input shapefile
 #' @param abimo_output path of ABIMO output DBF file
-#' @return
+#' @return joined SpatialPolygonsDataFrame with ABIMO input and
+#' output
 #' @export
 #'
 #' @importFrom foreign read.dbf

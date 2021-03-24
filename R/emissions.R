@@ -44,13 +44,13 @@ read_concentrations <- function(path) {
 
   # average across catchment types
   concentrations  <- x_conc %>%
-    dplyr::filter(short_name %in% short_names) %>%
+    dplyr::filter(.data$short_name %in% short_names) %>%
     dplyr::mutate(unit_load = kwb.utils::substSpecialChars(.data$UnitsAbbreviation) %>%
                     stringr::str_replace("L", "m2_year"),
                   label_load = sprintf("%s.%s",
                                        .data$short_name,
                                        .data$unit_load)) %>%
-    dplyr::rowwise(VariableID) %>%
+    dplyr::rowwise(.data$VariableID) %>%
     dplyr::mutate(mean = mean(dplyr::c_across(tidyselect::all_of(structures))))
 
   concentrations
