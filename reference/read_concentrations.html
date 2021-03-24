@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Changelog • urbanAnnualRunoff</title>
+<title>Emissions: read concentrations from OgRe database — read_concentrations • urbanAnnualRunoff</title>
 
 
 <!-- jquery -->
@@ -45,7 +45,11 @@
 
 
 
-<meta property="og:title" content="Changelog" />
+<meta property="og:title" content="Emissions: read concentrations from OgRe database — read_concentrations" />
+<meta property="og:description" content="imports data from OgRe database and selects relevant substances
+for case study sites (Beijing, Jinxi) and calculates mean concentrations
+over all structures (column: &quot;mean&quot;). In addition new columns (short_name,
+unit_load, label_load) are created" />
 
 
 
@@ -64,7 +68,7 @@
   </head>
 
   <body data-spy="scroll" data-target="#toc">
-    <div class="container template-news">
+    <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -137,26 +141,39 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-      <h1 data-toc-skip>Changelog <small></small></h1>
-      <small>Source: <a href='https://github.com/KWB-R/urbanAnnualRunoff/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
+    <h1>Emissions: read concentrations from OgRe database</h1>
+    <small class="dont-index">Source: <a href='https://github.com/KWB-R/urbanAnnualRunoff/blob/master/R/emissions.R'><code>R/emissions.R</code></a></small>
+    <div class="hidden name"><code>read_concentrations.Rd</code></div>
     </div>
 
-    <div id="urbanannualrunoff-0009000" class="section level1">
-<h1 class="page-header" data-toc-text="0.0.0.9000">
-<a href="#urbanannualrunoff-0009000" class="anchor"></a>urbanAnnualRunoff 0.0.0.9000</h1>
-<ul>
-<li><p>Added a <code>NEWS.md</code> file to track changes to the package.</p></li>
-<li><p>see <a href="https://style.tidyverse.org/news.html" class="uri">https://style.tidyverse.org/news.html</a> for writing a good <code>NEWS.md</code></p></li>
-</ul>
-</div>
-  </div>
+    <div class="ref-description">
+    <p>imports data from OgRe database and selects relevant substances
+for case study sites (Beijing, Jinxi) and calculates mean concentrations
+over all structures (column: "mean"). In addition new columns (short_name,
+unit_load, label_load) are created</p>
+    </div>
 
+    <pre class="usage"><span class='fu'>read_concentrations</span><span class='op'>(</span><span class='va'>path</span><span class='op'>)</span></pre>
+
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>path</th>
+      <td><p>path to OgRe database file "annual_mean_conc.csv"</p></td>
+    </tr>
+    </table>
+
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>data frame with selected substances and column</p>
+
+  </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
       <h2 data-toc-skip>Contents</h2>
     </nav>
   </div>
-
 </div>
 
 

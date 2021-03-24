@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Changelog • urbanAnnualRunoff</title>
+<title>Emissions: calculate loads — calculate_loads • urbanAnnualRunoff</title>
 
 
 <!-- jquery -->
@@ -45,7 +45,9 @@
 
 
 
-<meta property="og:title" content="Changelog" />
+<meta property="og:title" content="Emissions: calculate loads — calculate_loads" />
+<meta property="og:description" content="The annual load is calculated with V x c. For for heavy metals
+-&amp;gt; l/m2-year x ug/l = ug/m2-year;  for BOD/COD/TSS -&amp;gt; l/m2-year x mg/l = mg/m2-year" />
 
 
 
@@ -64,7 +66,7 @@
   </head>
 
   <body data-spy="scroll" data-target="#toc">
-    <div class="container template-news">
+    <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -137,26 +139,44 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-      <h1 data-toc-skip>Changelog <small></small></h1>
-      <small>Source: <a href='https://github.com/KWB-R/urbanAnnualRunoff/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
+    <h1>Emissions: calculate loads</h1>
+    <small class="dont-index">Source: <a href='https://github.com/KWB-R/urbanAnnualRunoff/blob/master/R/emissions.R'><code>R/emissions.R</code></a></small>
+    <div class="hidden name"><code>calculate_loads.Rd</code></div>
     </div>
 
-    <div id="urbanannualrunoff-0009000" class="section level1">
-<h1 class="page-header" data-toc-text="0.0.0.9000">
-<a href="#urbanannualrunoff-0009000" class="anchor"></a>urbanAnnualRunoff 0.0.0.9000</h1>
-<ul>
-<li><p>Added a <code>NEWS.md</code> file to track changes to the package.</p></li>
-<li><p>see <a href="https://style.tidyverse.org/news.html" class="uri">https://style.tidyverse.org/news.html</a> for writing a good <code>NEWS.md</code></p></li>
-</ul>
-</div>
-  </div>
+    <div class="ref-description">
+    <p>The annual load is calculated with V x c. For for heavy metals
+-&gt; l/m2-year x ug/l = ug/m2-year;  for BOD/COD/TSS -&gt; l/m2-year x mg/l = mg/m2-year</p>
+    </div>
 
+    <pre class="usage"><span class='fu'>calculate_loads</span><span class='op'>(</span><span class='va'>abimo_inpout</span>, <span class='va'>concentrations</span><span class='op'>)</span></pre>
+
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>abimo_inpout</th>
+      <td><p>data.frame or SpatialPolygonsDataFrame with ABIMO input and
+output as retrieved by <code><a href='postProcessABIMO.html'>postProcessABIMO</a></code></p></td>
+    </tr>
+    <tr>
+      <th>concentrations</th>
+      <td><p>concentrations data frame as retrieved by
+<code><a href='read_concentrations.html'>read_concentrations</a></code></p></td>
+    </tr>
+    </table>
+
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>add calculated loads as additional colums  to abimo_inpout data.frame
+or SpatialPolygonsDataFrame</p>
+
+  </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
       <h2 data-toc-skip>Contents</h2>
     </nav>
   </div>
-
 </div>
 
 

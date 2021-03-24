@@ -11,7 +11,9 @@
 <script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
-<script src="../pkgdown.js"></script><meta property="og:title" content="Workflow: Beijing">
+<script src="../pkgdown.js"></script><!-- docsearch --><script src="../docsearch.js"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/docsearch.js/2.6.3/docsearch.min.css" integrity="sha256-QOSRU/ra9ActyXkIBbiIB144aDBdtvXBcNc3OTNuX/Q=" crossorigin="anonymous">
+<link href="../docsearch.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha256-4HLtjeVgH0eIB3aZ9mLYF6E8oU5chNdjU6p6rrXpl9U=" crossorigin="anonymous"></script><meta property="og:title" content="Workflow: Beijing">
 <meta property="og:description" content="urbanAnnualRunoff">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
@@ -73,7 +75,13 @@
   </a>
 </li>
       </ul>
+<form class="navbar-form navbar-right hidden-xs hidden-sm" role="search">
+        <div class="form-group">
+          <input type="search" class="form-control" name="search-input" id="search-input" placeholder="Search..." aria-label="Search for..." autocomplete="off">
 </div>
+      </form>
+      
+    </div>
 <!--/.nav-collapse -->
   </div>
 <!--/.container -->
@@ -122,7 +130,7 @@ Workflow in RStudio:
   abimo_exe <span class="op">=</span> <span class="st">"&lt;abimo&gt;/Abimo3_2.exe"</span>,
   gis <span class="op">=</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/gis"</span>,
   climate <span class="op">=</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/climate"</span>,
-  emissions_input <span class="op">=</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/emissions/input"</span>,
+  emissions_input <span class="op">=</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/emissions/input/annual_mean_conc.csv"</span>,
   emissions_output <span class="op">=</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/emissions/output"</span>
 <span class="op">)</span>
 
@@ -378,55 +386,12 @@ Please copy to this location"</span>, <span class="va">paths</span><span class="
 
 
 <span class="co"># compute emissions Tongzhou with OgRe AMC (annual mean concentration) database</span>
+<span class="va">conc</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/read_concentrations.html">read_concentrations</a></span><span class="op">(</span>path <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">emissions_input</span><span class="op">)</span>
 
-<span class="va">cDataFile</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">emissions_input</span>, <span class="st">"annual_mean_conc.csv"</span><span class="op">)</span>
-
-<span class="co"># grab AMC from OgRe</span>
-<span class="va">x_conc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.table</a></span><span class="op">(</span>file <span class="op">=</span> <span class="va">cDataFile</span>, 
-                     sep <span class="op">=</span> <span class="st">";"</span>, 
-                     dec <span class="op">=</span> <span class="st">"."</span>, 
-                     stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span>, 
-                     header <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-
-<span class="co"># select substances</span>
-<span class="co">#c_heavy_metals &lt;- x_conc[5:13, 4:ncol(x_conc)]</span>
-<span class="co">#rownames(c_heavy_metals) &lt;- x_conc$VariableName[5:13]</span>
-
-<span class="va">structures</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"ALT"</span>, <span class="st">"NEU"</span>, <span class="st">"STR"</span>, <span class="st">"EFH"</span>, <span class="st">"GEW"</span>, <span class="st">"ANDERE"</span><span class="op">)</span>
-<span class="va">heavy_metals</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Abfiltrierbare Stoffe"</span>, 
-                  <span class="st">"Blei"</span>, 
-                  <span class="st">"Cadmium"</span>, 
-                  <span class="st">"Chrom"</span>, 
-                  <span class="st">"Kupfer"</span>, 
-                  <span class="st">"Nickel"</span>, 
-                  <span class="st">"Titan"</span>, 
-                  <span class="st">"Vanadium"</span>, 
-                  <span class="st">"Zink"</span><span class="op">)</span> 
-
-<span class="co"># average across catchment types</span>
-<span class="va">c_heavy_metals_means</span>  <span class="op">&lt;-</span> <span class="va">x_conc</span> <span class="op">%&gt;%</span> 
-  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">VariableName</span> <span class="op">%in%</span> <span class="va">heavy_metals</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>unit_load <span class="op">=</span> <span class="fu">kwb.utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.utils/man/substSpecialChars.html">substSpecialChars</a></span><span class="op">(</span><span class="va">.data</span><span class="op">$</span><span class="va">UnitsAbbreviation</span><span class="op">)</span> <span class="op">%&gt;%</span>  
-                  <span class="fu">stringr</span><span class="fu">::</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_replace.html">str_replace</a></span><span class="op">(</span><span class="st">"L"</span>, <span class="st">"m2_year"</span><span class="op">)</span>,
-                label_load <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">"%s.%s"</span>, 
-                                     <span class="va">.data</span><span class="op">$</span><span class="va">VariableName</span>, 
-                                     <span class="va">.data</span><span class="op">$</span><span class="va">unit_load</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/rowwise.html">rowwise</a></span><span class="op">(</span><span class="va">VariableID</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>conc_mean <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/c_across.html">c_across</a></span><span class="op">(</span><span class="fu">tidyselect</span><span class="fu">::</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/all_of.html">all_of</a></span><span class="op">(</span><span class="va">structures</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
-
-<span class="co"># annual load = V * c </span>
-<span class="co"># for heavy metals -&gt; l/m2-year * ug/l = ug/m2-year</span>
-<span class="co"># for TSS -&gt; l/m2-year * mg/l = mg/m2-year</span>
-<span class="va">loads</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind.html">bind_rows</a></span><span class="op">(</span>
-  <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html">setNames</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html">lapply</a></span><span class="op">(</span>X <span class="op">=</span> <span class="va">c_heavy_metals_means</span><span class="op">$</span><span class="va">conc_mean</span>,
-                FUN <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">a</span><span class="op">)</span><span class="op">{</span>
-                  <span class="va">abimo_inpout</span><span class="op">$</span><span class="va">ROW</span><span class="op">*</span><span class="va">a</span><span class="op">/</span><span class="fl">1e3</span>
-                <span class="op">}</span><span class="op">)</span>,
-           nm <span class="op">=</span> <span class="va">c_heavy_metals_means</span><span class="op">$</span><span class="va">label_load</span><span class="op">)</span>
+<span class="va">abimo_inpout_emissions</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/calculate_loads.html">calculate_loads</a></span><span class="op">(</span>
+  abimo_inpout <span class="op">=</span> <span class="va">abimo_inpout</span>, 
+  concentrations <span class="op">=</span> <span class="va">conc</span>
   <span class="op">)</span>
-
-<span class="co"># add computed loads to ABIMO dataset</span>
-<span class="va">abimo_inpout_emissions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="va">abimo_inpout</span>, <span class="va">loads</span><span class="op">)</span>
 
 <span class="co"># write out joined table output as shapefile</span>
 <span class="va">outFile</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">emissions_output</span>, 
@@ -459,7 +424,20 @@ Please copy to this location"</span>, <span class="va">paths</span><span class="
 </div>
 
   
-
-
-  </body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docsearch.js/2.6.1/docsearch.min.js" integrity="sha256-GKvGqXDznoRYHCwKXGnuchvKSwmx9SRMrZOTh2g4Sb0=" crossorigin="anonymous"></script><script>
+  docsearch({
+    
+    
+    apiKey: '3b4f8dee7a78052bd10dd954369f2c28',
+    indexName: 'urbanAnnualRunoff',
+    inputSelector: 'input#search-input.form-control',
+    transformData: function(hits) {
+      return hits.map(function (hit) {
+        hit.url = updateHitURL(hit);
+        return hit;
+      });
+    }
+  });
+</script>
+</body>
 </html>
