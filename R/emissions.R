@@ -76,7 +76,7 @@ calculate_loads <- function(abimo_inpout,
   loads <- dplyr::bind_rows(
     stats::setNames(lapply(X = concentrations$mean,
                     FUN = function(a){
-                      abimo_inpout$ROW*a/1e3
+                      abimo_inpout$ROW*a
                     }
     ),
     nm = concentrations$label_load
