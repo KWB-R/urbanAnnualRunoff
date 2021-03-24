@@ -14,6 +14,10 @@ authors:
 template:
   params:
     bootswatch: cerulean
+    docsearch:
+      api_key: 3b4f8dee7a78052bd10dd954369f2c28
+      index_name: urbanAnnualRunoff
+
 development:
   mode: auto
 
