@@ -9,7 +9,7 @@ postProcessABIMO(path_input, path_output)
 \arguments{
 \item{path_input}{path of ABIMO input shapefile}
 
-\item{abimo_output}{path of ABIMO output DBF file}
+\item{path_output}{path of ABIMO output DBF file}
 }
 \value{
 joined SpatialPolygonsDataFrame with ABIMO input and
