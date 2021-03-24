@@ -41,7 +41,7 @@ path_list <- list(
   abimo_exe = "<abimo>/Abimo3_2.exe",
   gis = "<root_path>/<data>/_DataAnalysis/gis",
   climate = "<root_path>/<data>/_DataAnalysis/climate",
-  emissions_input = "<root_path>/<data>/_DataAnalysis/emissions/input",
+  emissions_input = "<root_path>/<data>/_DataAnalysis/emissions/input/annual_mean_conc.csv",
   emissions_output = "<root_path>/<data>/_DataAnalysis/emissions/output"
 )
 
@@ -297,55 +297,12 @@ abimo_inpout <- urbanAnnualRunoff::postProcessABIMO(
 
 
 # compute emissions Tongzhou with OgRe AMC (annual mean concentration) database
+conc <- urbanAnnualRunoff::read_concentrations(path = paths$emissions_input)
 
-cDataFile <- file.path(paths$emissions_input, "annual_mean_conc.csv")
-
-# grab AMC from OgRe
-x_conc <- read.table(file = cDataFile, 
-                     sep = ";", 
-                     dec = ".", 
-                     stringsAsFactors = FALSE, 
-                     header = TRUE)
-
-# select substances
-#c_heavy_metals <- x_conc[5:13, 4:ncol(x_conc)]
-#rownames(c_heavy_metals) <- x_conc$VariableName[5:13]
-
-structures <- c("ALT", "NEU", "STR", "EFH", "GEW", "ANDERE")
-heavy_metals <- c("Abfiltrierbare Stoffe", 
-                  "Blei", 
-                  "Cadmium", 
-                  "Chrom", 
-                  "Kupfer", 
-                  "Nickel", 
-                  "Titan", 
-                  "Vanadium", 
-                  "Zink") 
-
-# average across catchment types
-c_heavy_metals_means  <- x_conc %>% 
-  dplyr::filter(VariableName %in% heavy_metals) %>% 
-  dplyr::mutate(unit_load = kwb.utils::substSpecialChars(.data$UnitsAbbreviation) %>%  
-                  stringr::str_replace("L", "m2_year"),
-                label_load = sprintf("%s.%s", 
-                                     .data$VariableName, 
-                                     .data$unit_load)) %>% 
-  dplyr::rowwise(VariableID) %>% 
-  dplyr::mutate(conc_mean = mean(dplyr::c_across(tidyselect::all_of(structures))))
-
-# annual load = V * c 
-# for heavy metals -> l/m2-year * ug/l = ug/m2-year
-# for TSS -> l/m2-year * mg/l = mg/m2-year
-loads <- dplyr::bind_rows(
-  setNames(lapply(X = c_heavy_metals_means$conc_mean,
-                FUN = function(a){
-                  abimo_inpout$ROW*a/1e3
-                }),
-           nm = c_heavy_metals_means$label_load)
+abimo_inpout_emissions <- urbanAnnualRunoff::calculate_loads(
+  abimo_inpout = abimo_inpout, 
+  concentrations = conc
   )
-
-# add computed loads to ABIMO dataset
-abimo_inpout_emissions <- cbind(abimo_inpout, loads)
 
 # write out joined table output as shapefile
 outFile <- file.path(paths$emissions_output, 
