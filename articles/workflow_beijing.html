@@ -146,7 +146,7 @@ Workflow in RStudio:
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">CODE</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/padCODE.html">padCODE</a></span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">CODE</span><span class="op">)</span>
 
 <span class="co"># build classification model</span>
-<span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/buildClassMod.html">buildClassMod</a></span><span class="op">(</span>
+<span class="fu">kwb.ml</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.ml/man/buildClassMod.html">buildClassMod</a></span><span class="op">(</span>
   rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
   image <span class="op">=</span> <span class="st">'input_image.tif'</span>,
   groundTruth <span class="op">=</span> <span class="st">'input_groundtruth2.shp'</span>,
@@ -172,7 +172,7 @@ Workflow in RStudio:
                        mode <span class="op">=</span> <span class="st">'prec_recall'</span><span class="op">)</span>
 
 <span class="co"># classify image for roofs and streets</span>
-<span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/predictSurfClass.html">predictSurfClass</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
+<span class="fu">kwb.ml</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.ml/man/predictSurfClass.html">predictSurfClass</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
                                     modelName <span class="op">=</span> <span class="st">'rForest.Rdata'</span>,
                                     image <span class="op">=</span> <span class="st">'input_image.tif'</span>,
                                     predName <span class="op">=</span> <span class="st">'classified_image.tif'</span><span class="op">)</span>
