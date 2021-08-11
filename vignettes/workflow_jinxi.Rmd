@@ -39,6 +39,8 @@ path_list <- list(
   abimo_exe = "<abimo>/Abimo3_2.exe",
   gis = "<root_path>/<data>/_DataAnalysis/gis",
   climate = "<root_path>/<data>/_DataAnalysis/climate"
+  emissions_input = "<root_path>/<data>/_DataAnalysis/emissions/input/annual_mean_conc.csv",
+  emissions_output = "<root_path>/<data>/_DataAnalysis/emissions/output"
 )
 
 paths <- kwb.utils::resolve(path_list)
@@ -53,7 +55,7 @@ names(abimo@data) <- "CODE"
 abimo@data$CODE <- urbanAnnualRunoff::padCODE(abimo@data$CODE)
 
 # build classification model
-urbanAnnualRunoff::buildClassMod(
+kwb.ml::buildClassMod(
   rawdir = paths$gis,
   image = 'input_image.img',
   groundTruth = 'input_groundtruth.shp',
@@ -79,7 +81,7 @@ caret::confusionMatrix(data = model$finalModel$predicted,
                        mode = 'prec_recall')
                        
 # classify image for roofs and streets
-urbanAnnualRunoff::predictSurfClass(rawdir = paths$gis,
+kwb.ml::predictSurfClass(rawdir = paths$gis,
                                     modelName = 'rForest.Rdata',
                                     image = 'input_image.img',
                                     predName = 'classified_image.img')
@@ -310,6 +312,22 @@ urbanAnnualRunoff::postProcessABIMO(rawdir = paths$abimo,
                  ABIMOjoinedName = sprintf("%s_joined.dbf", abimo_out)
                 )
 }
+
+# compute emissions Jinxi with OgRe AMC (annual mean concentration) database
+conc <- urbanAnnualRunoff::read_concentrations(path = paths$emissions_input)
+
+abimo_inpout_emissions <- urbanAnnualRunoff::calculate_loads(
+  abimo_inpout = abimo_inpout, 
+  concentrations = conc
+  )
+
+# write out joined table output as shapefile
+outFile <- file.path(paths$emissions_output, 
+                     sprintf("abimo_%s_emissions.shp", paths$site))
+  
+raster::shapefile(x = abimo_inpout_emissions, 
+                  filename = outFile, 
+                  overwrite = TRUE)
 
 }
 

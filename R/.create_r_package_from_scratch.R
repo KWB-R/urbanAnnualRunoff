@@ -28,8 +28,8 @@ kwb.pkgbuild::use_pkg(author,
 usethis::use_vignette("Workflow")
 
 ### R functions
-pkg_dependencies <- c("caret", "dplyr", "doParallel", "foreign", "fs", "lubridate",
-                      "kwb.utils", "rlang", "randomForest", "raster", "rgdal", "remotes")
+pkg_dependencies <- c("dplyr", "foreign", "fs", "lubridate",
+                      "kwb.utils", "rlang", "raster", "rgdal", "remotes")
 
 sapply(pkg_dependencies, usethis::use_package)
 

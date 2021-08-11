@@ -57,7 +57,7 @@ abimo@data$CODE <- paste(abimo@data$Name, abimo@data$Outlet, sep='_')
 abimo@data$CODE <- urbanAnnualRunoff::padCODE(abimo@data$CODE)
 
 # build classification model
-urbanAnnualRunoff::buildClassMod(
+kwb.ml::buildClassMod(
   rawdir = paths$gis,
   image = 'input_image.tif',
   groundTruth = 'input_groundtruth2.shp',
@@ -83,7 +83,7 @@ caret::confusionMatrix(data = model$finalModel$predicted,
                        mode = 'prec_recall')
 
 # classify image for roofs and streets
-urbanAnnualRunoff::predictSurfClass(rawdir = paths$gis,
+kwb.ml::predictSurfClass(rawdir = paths$gis,
                                     modelName = 'rForest.Rdata',
                                     image = 'input_image.tif',
                                     predName = 'classified_image.tif')
