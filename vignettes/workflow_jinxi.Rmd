@@ -38,7 +38,7 @@ path_list <- list(
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
   abimo_exe = "<abimo>/Abimo3_2.exe",
   gis = "<root_path>/<data>/_DataAnalysis/gis",
-  climate = "<root_path>/<data>/_DataAnalysis/climate"
+  climate = "<root_path>/<data>/_DataAnalysis/climate",
   emissions_input = "<root_path>/<data>/_DataAnalysis/emissions/input/annual_mean_conc.csv",
   emissions_output = "<root_path>/<data>/_DataAnalysis/emissions/output"
 )
@@ -88,7 +88,7 @@ kwb.ml::predictSurfClass(rawdir = paths$gis,
 
 # make overlay object (list where each element is a vector of the pixel values 
 # of the classified image for each subcatchment)
-urbanAnnualRunoff::makeOverlay(rawdir = paths$gis,
+kwb.ml::makeOverlay(rawdir = paths$gis,
                                rasterData = 'classified_image.img',
                                subcatchmSPobject = abimo,
                                overlayName = 'surfType')
