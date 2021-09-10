@@ -323,7 +323,8 @@ Workflow in RStudio:
                   <span class="st">'KAN_BEB'</span>, <span class="st">'KAN_VGU'</span>, <span class="st">'KAN_STR'</span>,
                   <span class="st">'REGENJA'</span>, <span class="st">'REGENSO'</span>,
                   <span class="st">'FELD_30'</span>, <span class="st">'FELD_150'</span>, <span class="st">'FLUR'</span><span class="op">)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">[</span>, <span class="va">requiredCols</span><span class="op">]</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">kwb.utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.utils/man/selectColumns.html">selectColumns</a></span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span>, 
+                                       columns <span class="op">=</span> <span class="va">requiredCols</span><span class="op">)</span>
 
 <span class="co"># format numbers to 0 decimal places (avoid 'pseudo-accuracy')</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">[</span>, <span class="fl">8</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html">ncol</a></span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span>
@@ -341,6 +342,9 @@ Workflow in RStudio:
                                  replacement<span class="op">=</span><span class="st">","</span><span class="op">)</span>,
                            stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>
 
+
+
+
 <span class="co"># write ABIMO input table</span>
 <span class="va">abimo_inp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'abimo_%s.shp'</span>, <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>
 <span class="va">abimo_inp_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>, <span class="va">abimo_inp</span><span class="op">)</span>
@@ -353,6 +357,7 @@ Workflow in RStudio:
 <span class="va">abimo_inp_dbf_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>, <span class="va">abimo_inp_dbf</span><span class="op">)</span>
 <span class="fu">kwb.abimo</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.abimo/man/write.dbf.abimo.html">write.dbf.abimo</a></span><span class="op">(</span><span class="va">abimo</span>, 
                            new_dbf <span class="op">=</span> <span class="va">abimo_inp_dbf_path</span><span class="op">)</span>
+
 
 
 <span class="co"># run ABIMO manually in GUI ----------------------------------------------------</span>
@@ -377,6 +382,16 @@ Please copy to this location"</span>, <span class="va">paths</span><span class="
   path_input <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>, <span class="va">abimo_inp</span><span class="op">)</span>,
   path_output <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>, <span class="va">abimo_out</span><span class="op">)</span>
 <span class="op">)</span>
+
+<span class="va">abimo_stats</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html">tibble</a></span><span class="op">(</span>
+  catchment_km2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="va">abimo_inpout</span><span class="op">$</span><span class="va">FLAECHE</span><span class="op">)</span><span class="op">)</span><span class="op">/</span><span class="fl">1000000</span>, <span class="fl">2</span><span class="op">)</span>,
+  rainfall_cbm <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="va">abimo_inpout</span><span class="op">$</span><span class="va">FLAECHE</span><span class="op">)</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="va">abimo_inpout</span><span class="op">$</span><span class="va">REGENJA</span><span class="op">)</span><span class="op">/</span><span class="fl">1000</span><span class="op">)</span>,
+  runoff_cbm <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="va">abimo_inpout</span><span class="op">$</span><span class="va">FLAECHE</span><span class="op">)</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="va">abimo_inpout</span><span class="op">$</span><span class="va">ROW</span><span class="op">)</span><span class="op">/</span><span class="fl">1000</span><span class="op">)</span>,
+  infiltration_cbm <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="va">abimo_inpout</span><span class="op">$</span><span class="va">FLAECHE</span><span class="op">)</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="va">abimo_inpout</span><span class="op">$</span><span class="va">RI</span><span class="op">)</span><span class="op">/</span><span class="fl">1000</span><span class="op">)</span>,  
+  evapotrans_cbm <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="va">abimo_inpout</span><span class="op">$</span><span class="va">FLAECHE</span><span class="op">)</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html">as.numeric</a></span><span class="op">(</span><span class="va">abimo_inpout</span><span class="op">$</span><span class="va">VERDUNSTUN</span><span class="op">)</span><span class="op">/</span><span class="fl">1000</span><span class="op">)</span>
+<span class="op">)</span>
+
+<span class="va">abimo_stats</span>
 
 <span class="co"># kwb.abimo::abimo_comb_in_out() works only with DBF as input</span>
 <span class="co"># abimo_inpout &lt;- kwb.abimo::abimo_comb_in_out(</span>
