@@ -234,7 +234,8 @@ requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK',
                   'KAN_BEB', 'KAN_VGU', 'KAN_STR',
                   'REGENJA', 'REGENSO',
                   'FELD_30', 'FELD_150', 'FLUR')
-abimo@data <- abimo@data[, requiredCols]
+abimo@data <- kwb.utils::selectColumns(abimo@data, 
+                                       columns = requiredCols)
 
 # format numbers to 0 decimal places (avoid 'pseudo-accuracy')
 abimo@data[, 8:ncol(abimo@data)] <- round(
@@ -252,6 +253,9 @@ abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
                                  replacement=","),
                            stringsAsFactors = FALSE)
 
+
+
+
 # write ABIMO input table
 abimo_inp <- sprintf('abimo_%s.shp', paths$site)
 abimo_inp_path <- file.path(paths$abimo, abimo_inp)
@@ -264,6 +268,7 @@ abimo_inp_dbf <- sprintf('abimo_%s.dbf', paths$site)
 abimo_inp_dbf_path <- file.path(paths$abimo, abimo_inp_dbf)
 kwb.abimo::write.dbf.abimo(abimo, 
                            new_dbf = abimo_inp_dbf_path)
+
 
 
 # run ABIMO manually in GUI ----------------------------------------------------
@@ -288,6 +293,16 @@ abimo_inpout <- urbanAnnualRunoff::postProcessABIMO(
   path_input = file.path(paths$abimo, abimo_inp),
   path_output = file.path(paths$abimo, abimo_out)
 )
+
+abimo_stats <- tibble::tibble(
+  catchment_km2 = round(sum(as.numeric(abimo_inpout$FLAECHE))/1000000, 2),
+  rainfall_cbm = sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$REGENJA)/1000),
+  runoff_cbm = sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$ROW)/1000),
+  infiltration_cbm = sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$RI)/1000),  
+  evapotrans_cbm = sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$VERDUNSTUN)/1000)
+)
+
+abimo_stats
 
 # kwb.abimo::abimo_comb_in_out() works only with DBF as input
 # abimo_inpout <- kwb.abimo::abimo_comb_in_out(
