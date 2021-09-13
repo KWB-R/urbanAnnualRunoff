@@ -36,6 +36,8 @@ path_list <- list(
   site = "Beijing",
   data = "WP2_SUW_pollution_<site>",
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
+  abimo_berlin = "abimo/abimo_2019_mitstrassen.dbf",
+  abimo_scenarios = "<abimo>/scenarios/de-coupling",
   abimo_config_original = "<abimo>/config_original.xml",
   abimo_config_modified = "<abimo>/config.xml",
   abimo_exe = "<abimo>/Abimo3_2.exe",
@@ -169,11 +171,11 @@ abimo@data$KAN_VGU<- 80
 abimo@data$KAN_STR<- 80
 
 # soil field capacity (provided BEWG on 2020-11-03) and 
-# groundwater level: 10m (data source ???)
+# groundwater level: 15m (email to MR on 2021-03-25 10:38 by Dr. Dong)
 abimo@data$KANAL<- 1 
 abimo@data$FELD_30 <- 20
 abimo@data$FELD_150 <- 20
-abimo@data$FLUR <- 10
+abimo@data$FLUR <- 15
 
 # compute annual and summer rainfall. 
 # *** potential enhancement: ***
@@ -289,27 +291,38 @@ kwb.utils::hsOpenWindowsExplorer(dirname(paths$abimo_exe))
 # postprocessing ----------------------------------------------------------------
 # post-process ABIMO output file -> join it with input shape file for 
 # visualization in GIS
-abimo_inpout <- urbanAnnualRunoff::postProcessABIMO(
-  path_input = file.path(paths$abimo, abimo_inp),
-  path_output = file.path(paths$abimo, abimo_out)
-)
 
-abimo_stats <- tibble::tibble(
+
+
+get_abimo_stats <- function(abimo_inpout) {
+
+tibble::tibble(
   catchment_km2 = round(sum(as.numeric(abimo_inpout$FLAECHE))/1000000, 2),
   rainfall_cbm = sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$REGENJA)/1000),
   runoff_cbm = sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$ROW)/1000),
   infiltration_cbm = sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$RI)/1000),  
   evapotrans_cbm = sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$VERDUNSTUN)/1000)
 )
+}
 
-abimo_stats
+scenario_dirs <- list.dirs(paths$abimo_scenarios)[-1]
 
-# kwb.abimo::abimo_comb_in_out() works only with DBF as input
-# abimo_inpout <- kwb.abimo::abimo_comb_in_out(
-#   file_ABIMO_out = file.path(paths$abimo, abimo_out),
-#   file_ABIMO_in = abimo_inp_dbf_path
-# )
+scenario_results_list <- lapply(scenario_dirs, function(scenario_dir) {
 
+scenario_name <- basename(scenario_dir)
+
+abimo_inpout <- urbanAnnualRunoff::postProcessABIMO(
+  path_input = file.path(scenario_dir, abimo_inp),
+  path_output = file.path(scenario_dir, abimo_out)
+)
+
+# write out joined table output as shapefile
+outFile <- file.path(scenario_dir, 
+                     sprintf("abimo_%s_waterbalance.shp", paths$site))
+  
+raster::shapefile(x = abimo_inpout, 
+                  filename = outFile, 
+                  overwrite = TRUE)
 
 # compute emissions Tongzhou with OgRe AMC (annual mean concentration) database
 conc <- urbanAnnualRunoff::read_concentrations(path = paths$emissions_input)
@@ -320,12 +333,30 @@ abimo_inpout_emissions <- urbanAnnualRunoff::calculate_loads(
   )
 
 # write out joined table output as shapefile
-outFile <- file.path(paths$emissions_output, 
+outFile <- file.path(scenario_dir, 
                      sprintf("abimo_%s_emissions.shp", paths$site))
   
 raster::shapefile(x = abimo_inpout_emissions, 
                   filename = outFile, 
                   overwrite = TRUE)
+
+tibble::tibble(scenario_name = scenario_name, 
+               get_abimo_stats(abimo_inpout),
+               abimo_inpout = list(tibble::as_tibble(abimo_inpout@data)),
+               abimo_inpout_emissions = list(tibble::as_tibble(abimo_inpout_emissions)))
+})
+
+
+# kwb.abimo::abimo_comb_in_out() works only with DBF as input
+# abimo_inpout <- kwb.abimo::abimo_comb_in_out(
+#   file_ABIMO_out = file.path(paths$abimo, abimo_out),
+#   file_ABIMO_in = abimo_inp_dbf_path
+# )
+
+scenario_results <- dplyr::bind_rows(scenario_results_list)
+
+
+
 
 }
 ```
