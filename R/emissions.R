@@ -9,7 +9,7 @@
 #' @importFrom kwb.utils multiSubstitute substSpecialChars
 #' @importFrom rlang .data
 #' @importFrom stringr str_replace
-#' @importFrom dplyr c_across rowwise
+#' @importFrom dplyr across c_across rowwise across
 #' @importFrom tidyselect all_of
 #'
 read_concentrations <- function(path) {
@@ -20,6 +20,25 @@ read_concentrations <- function(path) {
                        dec = ".",
                        stringsAsFactors = FALSE,
                        header = TRUE)
+
+  structures <- c("ALT", "NEU", "STR", "EFH", "GEW", "ANDERE")
+
+  x_conc[x_conc$UnitsAbbreviation == "mg/L",] <-
+    x_conc[x_conc$UnitsAbbreviation == "mg/L",] %>%
+    dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(structures),
+                                ~ .x / 1000))
+
+  x_conc[x_conc$UnitsAbbreviation == "ug/L",] <-
+    x_conc[x_conc$UnitsAbbreviation == "ug/L",] %>%
+    dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(structures),
+                                ~ .x / 1000000))
+
+
+
+  x_conc$UnitsAbbreviation <- kwb.utils::multiSubstitute(
+    strings = x_conc$UnitsAbbreviation,
+    replacements = list("mg/L" = "kg/m3",
+                        "ug/L" = "kg/m3"))
 
   ### select substances of interest
   shortnames_list <- list("Biologischer Sauerstoffbedarf" = "BOD" ,
@@ -40,13 +59,11 @@ read_concentrations <- function(path) {
 
   short_names <- as.character(unlist(shortnames_list))
 
-  structures <- c("ALT", "NEU", "STR", "EFH", "GEW", "ANDERE")
-
   # average across catchment types
   concentrations  <- x_conc %>%
     dplyr::filter(.data$short_name %in% short_names) %>%
     dplyr::mutate(unit_load = kwb.utils::substSpecialChars(.data$UnitsAbbreviation) %>%
-                    stringr::str_replace("L", "m2_year"),
+                    stringr::str_replace("m3", "yr"),
                   label_load = sprintf("%s.%s",
                                        .data$short_name,
                                        .data$unit_load)) %>%
@@ -70,13 +87,11 @@ read_concentrations <- function(path) {
 #' @importFrom stats setNames
 calculate_loads <- function(abimo_inpout,
                             concentrations) {
-  # annual load = V * c
-  # for heavy metals -> l/m2-year * ug/l = ug/m2-year
-  # for TSS -> l/m2-year * mg/l = mg/m2-year
+  # annual load = V * c (all units normalised to "kg/year)
   loads <- dplyr::bind_rows(
     stats::setNames(lapply(X = concentrations$mean,
                     FUN = function(a){
-                      abimo_inpout$ROW*a
+                      abimo_inpout$FLAECHE*(abimo_inpout$ROW/1000)*a
                     }
     ),
     nm = concentrations$label_load
