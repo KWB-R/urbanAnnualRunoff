@@ -108,6 +108,18 @@ abimo@data$PROBAU <- urbanAnnualRunoff::makePROBAU(
   overlayName = 'surfType',
   targetValue = 1)
 
+## Decoupling from SWMM modelling: 
+## https://kwb-r.github.io/keys.lid/articles/scenarios.html#green-roof
+##
+# 100 % green-roof: with_berm_intensive_no-drainmat
+#abimo@data$PROBAU <- (1-(0.9042-0.152))*abimo@data$PROBAU
+# 50 % green-roof: with_berm_intensive_no-drainmat
+#abimo@data$PROBAU <- (1-(0.9042-0.152)/2)*abimo@data$PROBAU
+# 100 % green-roof: with_berm_extensive_no-drainmat
+#abimo@data$PROBAU <- (1-(0.726-0.152))*abimo@data$PROBAU
+# 50 % green-roof: with_berm_extensive_no-drainmat
+#abimo@data$PROBAU <- (1-(0.726-0.152)/2)*abimo@data$PROBAU
+
 # compute ABIMO variable STR_FLGES (m2 street area)
 abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(
   rawdir = paths$gis,
@@ -212,10 +224,17 @@ precipitation <- urbanAnnualRunoff::computeABIMOclimate(
 
 
 ### Merge complete years (i.e. 2014-2019 for Beijing)
+### mean rainfall: 492mm
 climate_data <- dplyr::inner_join(precipitation, evapotranspiration,
                                   by = "year", 
                                   suffix = c(".p", ".etp")) %>%  
   dplyr::mutate(dplyr::across(tidyselect::ends_with("p"), round))
+
+#wet year 629mm (2018)
+#climate_data <- climate_data %>%  dplyr::filter(year == "2018")
+
+#dry year 351mm (2019)
+#climate_data <- climate_data %>%  dplyr::filter(year == "2019")
 
 
 # annual rainfall (this can be automatized by making 'computeABIMOclimate'
