@@ -36,7 +36,7 @@ path_list <- list(
   site = "Beijing",
   data = "WP2_SUW_pollution_<site>",
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
-  abimo_berlin = "abimo/abimo_2019_mitstrassen.dbf",
+  abimo_berlin = "<abimo>/abimo_2019_mitstrassen.dbf",
   abimo_scenarios = "<abimo>/scenarios/de-coupling",
   abimo_config_original = "<abimo>/config_original.xml",
   abimo_config_modified = "<abimo>/config.xml",
@@ -135,20 +135,33 @@ abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
 
 # use raw code to compute and assign remaining ABIMO variables manually
 
+### use Berlin Abimo data (for 'Blockteilflaechen' connected to channelisation ### to imrpove default parameterisation for 'unkown' underground types in Beijing 
+abimo_berlin <- foreign::read.dbf(paths$abimo_berlin) %>% 
+  dplyr::filter(KANAL == 1)
+
+share_vg_str <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^VGSTRASSE"), drop = FALSE] * abimo_berlin$STR_FLGES /sum(abimo_berlin$STR_FLGES))
+                           
+share_belag <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^BELAG")] * abimo_berlin$FLGES /sum(abimo_berlin$FLGES))
+share_belag <- share_belag*100/sum(share_belag)
+
+share_belag_str <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^STR_BELAG")] * abimo_berlin$STR_FLGES /sum(abimo_berlin$STR_FLGES))
+share_belag_str <- share_belag_str*100/sum(share_belag_str)
+
+
 # % imperviousness streets
-abimo@data$VGSTRASSE <- 100
+abimo@data$VGSTRASSE <- share_vg_str #100 -> 90.0402
 
 # %cover types in other imperv. areas (PROVGU)
-abimo@data$BELAG1 <- 100
-abimo@data$BELAG2 <- 0
-abimo@data$BELAG3 <- 0
-abimo@data$BELAG4 <- 0
+abimo@data$BELAG1 <- share_belag[1] #100 -> 34.69844
+abimo@data$BELAG2 <- share_belag[2] #  0 -> 48.03494
+abimo@data$BELAG3 <- share_belag[3] #  0 ->  5.54433
+abimo@data$BELAG4 <- share_belag[4] #  0 -> 11.72229
 
 # %cover types in street areas
-abimo@data$STR_BELAG1 <- 100
-abimo@data$STR_BELAG2 <- 0
-abimo@data$STR_BELAG3 <- 0
-abimo@data$STR_BELAG4 <- 0
+abimo@data$STR_BELAG1 <- share_belag_str[1] #100 -> 51.344865
+abimo@data$STR_BELAG2 <- share_belag_str[2] #0 -> 26.501014
+abimo@data$STR_BELAG3 <- share_belag_str[3] #0 -> 14.497974
+abimo@data$STR_BELAG4 <- share_belag_str[4] #0 ->  7.656147
 
 # identifiers
 abimo@data$BEZIRK <- 1
