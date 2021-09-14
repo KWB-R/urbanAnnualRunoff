@@ -14,6 +14,8 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Workflow
+
 ```{r workflow, eval = FALSE}
 ### prerequisites (64bit R)
 if(Sys.getenv("R_ARCH") != "/x64") {
@@ -426,6 +428,13 @@ scenario_results_beijing <- dplyr::bind_rows(scenario_results_list) %>%
 
 }
 ```
+
+## Scenario Results
+
+Below is a summary table with the ABIMO water balance modelling results for the different `de-coupling` scenarios. 
+Combining (`combi_xxx`) the different single measures, i.e. `bioretention cells` (for streets), `green roofs` (for sealed areas with buildings),  and `permeable pavements` (for sealed areas without buildings/streets)) enables to satisfy the `VRR` (volume rainfall retended) goal defined for climate zone 3, i.e `0.75 >= VRR <= 0.85`.
+
+
 
 
 ```{r scenario_results, eval = TRUE}
