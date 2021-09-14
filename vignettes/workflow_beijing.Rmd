@@ -2,7 +2,7 @@
 title: "Workflow: Beijing"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{"Workflow: Beijing"}
+  %\VignetteIndexEntry{Workflow: Beijing}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -417,11 +417,18 @@ tibble::tibble(scenario_name = scenario_name,
 #   file_ABIMO_in = abimo_inp_dbf_path
 # )
 
-scenario_results <- dplyr::bind_rows(scenario_results_list) %>% 
+scenario_results_beijing <- dplyr::bind_rows(scenario_results_list) %>% 
   dplyr::mutate(vrr = 1 - .data$runoff_cbm/.data$rainfall_cbm)
 
+#usethis::use_data(scenario_results_beijing)
 
 
 
 }
+```
+
+
+```{r scenario_results, eval = TRUE}
+library(urbanAnnualRunoff)
+DT::datatable(urbanAnnualRunoff::scenario_results_beijing %>%  dplyr::select(!tidyselect::all_of(c("abimo_inpout", "abimo_inpout_emissions"))))
 ```

@@ -2,7 +2,7 @@
 title: "Workflow: Jinxi"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{"Workflow: Jinxi"}
+  %\VignetteIndexEntry{Workflow: Jinxi}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
