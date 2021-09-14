@@ -234,6 +234,18 @@ Workflow in RStudio:
                             <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VG</span> <span class="op">-</span> <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROBAU</span>,
                             <span class="fl">0</span><span class="op">)</span>
 
+<span class="co">## Decoupling from SWMM modelling: </span>
+<span class="co">## https://kwb-r.github.io/keys.lid/articles/scenarios.html#permeable-pavements</span>
+<span class="co">##</span>
+<span class="co"># 100 % permeable pavements: 180mm.per.hour_no-drainage</span>
+<span class="co">#abimo@data$PROVGU &lt;- (1-100*(0.572-0.152)/50)*abimo@data$PROVGU</span>
+<span class="co">#  50 % permeable pavements: 180mm.per.hour_no-drainage</span>
+<span class="co">#abimo@data$PROVGU &lt;- (1-50*(0.572-0.152)/50)*abimo@data$PROVGU</span>
+<span class="co">#  25 % permeable pavements: 180mm.per.hour_no-drainage</span>
+<span class="co">#abimo@data$PROVGU &lt;- (1-25*(0.572-0.152)/50)*abimo@data$PROVGU</span>
+<span class="co">#  10 % permeable pavements: 180mm.per.hour_no-drainage</span>
+<span class="co">#abimo@data$PROVGU &lt;- (1-10*(0.572-0.152)/50)*abimo@data$PROVGU</span>
+
 <span class="co"># use raw code to compute and assign remaining ABIMO variables manually</span>
 
 <span class="co">### use Berlin Abimo data (for 'Blockteilflaechen' connected to channelisation ### to imrpove default parameterisation for 'unkown' underground types in Beijing </span>
@@ -247,6 +259,8 @@ Workflow in RStudio:
 
 <span class="va">share_belag_str</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html">colSums</a></span><span class="op">(</span><span class="va">abimo_berlin</span><span class="op">[</span>, <span class="fu">stringr</span><span class="fu">::</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_detect.html">str_detect</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html">names</a></span><span class="op">(</span><span class="va">abimo_berlin</span><span class="op">)</span>, <span class="st">"^STR_BELAG"</span><span class="op">)</span><span class="op">]</span> <span class="op">*</span> <span class="va">abimo_berlin</span><span class="op">$</span><span class="va">STR_FLGES</span> <span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="va">abimo_berlin</span><span class="op">$</span><span class="va">STR_FLGES</span><span class="op">)</span><span class="op">)</span>
 <span class="va">share_belag_str</span> <span class="op">&lt;-</span> <span class="va">share_belag_str</span><span class="op">*</span><span class="fl">100</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="va">share_belag_str</span><span class="op">)</span>
+
+<span class="va">share_kan</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html">colSums</a></span><span class="op">(</span><span class="va">abimo_berlin</span><span class="op">[</span>, <span class="fu">stringr</span><span class="fu">::</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_detect.html">str_detect</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html">names</a></span><span class="op">(</span><span class="va">abimo_berlin</span><span class="op">)</span>, <span class="st">"^KAN_"</span><span class="op">)</span><span class="op">]</span> <span class="op">*</span> <span class="op">(</span><span class="va">abimo_berlin</span><span class="op">$</span><span class="va">FLGES</span><span class="op">+</span><span class="va">abimo_berlin</span><span class="op">$</span><span class="va">STR_FLGES</span><span class="op">)</span> <span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="va">abimo_berlin</span><span class="op">$</span><span class="va">FLGES</span><span class="op">+</span><span class="va">abimo_berlin</span><span class="op">$</span><span class="va">STR_FLGES</span><span class="op">)</span><span class="op">)</span>
 
 
 <span class="co"># % imperviousness streets</span>
@@ -279,14 +293,13 @@ Workflow in RStudio:
 
 
 <span class="co"># channelization degrees. based on data provided BEWG (2020-11-03)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KANAL</span><span class="op">&lt;-</span> <span class="fl">1</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KAN_BEB</span><span class="op">&lt;-</span> <span class="fl">80</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KAN_VGU</span><span class="op">&lt;-</span> <span class="fl">80</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KAN_STR</span><span class="op">&lt;-</span> <span class="fl">80</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KANAL</span> <span class="op">&lt;-</span> <span class="fl">1</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KAN_BEB</span> <span class="op">&lt;-</span> <span class="fl">80</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KAN_VGU</span> <span class="op">&lt;-</span> <span class="fl">80</span>
+<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KAN_STR</span> <span class="op">&lt;-</span> <span class="fl">80</span>
 
 <span class="co"># soil field capacity (provided BEWG on 2020-11-03) and </span>
 <span class="co"># groundwater level: 15m (email to MR on 2021-03-25 10:38 by Dr. Dong)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KANAL</span><span class="op">&lt;-</span> <span class="fl">1</span> 
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FELD_30</span> <span class="op">&lt;-</span> <span class="fl">20</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FELD_150</span> <span class="op">&lt;-</span> <span class="fl">20</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FLUR</span> <span class="op">&lt;-</span> <span class="fl">15</span>
