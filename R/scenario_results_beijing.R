@@ -2,7 +2,7 @@
 #'
 #' A dataset for ABIMO modelling results for Beijing case study
 #'
-#' @format A data.frame with 21 rows and 9 variables:
+#' @format A data.frame with 23 rows and 9 variables:
 #' \describe{
 #'   \item{scenario_name}{name of scenario}
 #'   \item{catchment_km2}{sum of FLGES ans STR_FLGES (in square kilometers)}

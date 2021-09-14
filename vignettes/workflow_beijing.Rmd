@@ -420,9 +420,9 @@ tibble::tibble(scenario_name = scenario_name,
 # )
 
 scenario_results_beijing <- dplyr::bind_rows(scenario_results_list) %>% 
-  dplyr::mutate(vrr = 1 - .data$runoff_cbm/.data$rainfall_cbm)
+  dplyr::mutate(vrr = round(1 - .data$runoff_cbm/.data$rainfall_cbm,3))
 
-#usethis::use_data(scenario_results_beijing)
+#usethis::use_data(scenario_results_beijing, overwrite = TRUE)
 
 
 
