@@ -145,6 +145,18 @@ abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
                             abimo@data$VG - abimo@data$PROBAU,
                             0)
 
+## Decoupling from SWMM modelling: 
+## https://kwb-r.github.io/keys.lid/articles/scenarios.html#permeable-pavements
+##
+# 100 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-100*(0.572-0.152)/50)*abimo@data$PROVGU
+#  50 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-50*(0.572-0.152)/50)*abimo@data$PROVGU
+#  25 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-25*(0.572-0.152)/50)*abimo@data$PROVGU
+#  10 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-10*(0.572-0.152)/50)*abimo@data$PROVGU
+
 # use raw code to compute and assign remaining ABIMO variables manually
 
 ### use Berlin Abimo data (for 'Blockteilflaechen' connected to channelisation ### to imrpove default parameterisation for 'unkown' underground types in Beijing 
@@ -158,6 +170,8 @@ share_belag <- share_belag*100/sum(share_belag)
 
 share_belag_str <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^STR_BELAG")] * abimo_berlin$STR_FLGES /sum(abimo_berlin$STR_FLGES))
 share_belag_str <- share_belag_str*100/sum(share_belag_str)
+
+share_kan <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^KAN_")] * (abimo_berlin$FLGES+abimo_berlin$STR_FLGES) /sum(abimo_berlin$FLGES+abimo_berlin$STR_FLGES))
 
 
 # % imperviousness streets
@@ -190,14 +204,13 @@ abimo@data$TYP <- 38
 
 
 # channelization degrees. based on data provided BEWG (2020-11-03)
-abimo@data$KANAL<- 1
-abimo@data$KAN_BEB<- 80
-abimo@data$KAN_VGU<- 80
-abimo@data$KAN_STR<- 80
+abimo@data$KANAL <- 1
+abimo@data$KAN_BEB <- 80
+abimo@data$KAN_VGU <- 80
+abimo@data$KAN_STR <- 80
 
 # soil field capacity (provided BEWG on 2020-11-03) and 
 # groundwater level: 15m (email to MR on 2021-03-25 10:38 by Dr. Dong)
-abimo@data$KANAL<- 1 
 abimo@data$FELD_30 <- 20
 abimo@data$FELD_150 <- 20
 abimo@data$FLUR <- 15
