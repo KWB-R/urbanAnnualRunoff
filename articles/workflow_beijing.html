@@ -201,13 +201,17 @@ Workflow in RStudio:
 <span class="co">## https://kwb-r.github.io/keys.lid/articles/scenarios.html#green-roof</span>
 <span class="co">##</span>
 <span class="co"># 100 % green-roof: with_berm_intensive_no-drainmat</span>
-<span class="co">#abimo@data$PROBAU &lt;- (1-(0.9042-0.152))*abimo@data$PROBAU</span>
+<span class="co">#abimo@data$PROBAU &lt;- (1-100*(90.42-15.2)/100)*abimo@data$PROBAU # combi_high</span>
 <span class="co"># 50 % green-roof: with_berm_intensive_no-drainmat</span>
-<span class="co">#abimo@data$PROBAU &lt;- (1-(0.9042-0.152)/2)*abimo@data$PROBAU</span>
+<span class="co">#abimo@data$PROBAU &lt;- (1-50*(90.42-15.2)/100)*abimo@data$PROBAU # combi_medium</span>
+<span class="co"># 25 % green-roof: with_berm_intensive_no-drainmat</span>
+<span class="co">#abimo@data$PROBAU &lt;- (1-25*(90.42-15.2)/100)*abimo@data$PROBAU </span>
 <span class="co"># 100 % green-roof: with_berm_extensive_no-drainmat</span>
-<span class="co">#abimo@data$PROBAU &lt;- (1-(0.726-0.152))*abimo@data$PROBAU</span>
+<span class="co">#abimo@data$PROBAU &lt;- (1-100*(72.6-15.2)/100)*abimo@data$PROBAU</span>
 <span class="co"># 50 % green-roof: with_berm_extensive_no-drainmat</span>
-<span class="co">#abimo@data$PROBAU &lt;- (1-(0.726-0.152)/2)*abimo@data$PROBAU</span>
+<span class="co">#abimo@data$PROBAU &lt;- (1-50*(72.6-15.2)/100)*abimo@data$PROBAU</span>
+<span class="co"># 25 % green-roof: with_berm_extensive_no-drainmat</span>
+<span class="co">#abimo@data$PROBAU &lt;- (1-25*(72.6-15.2)/100)*abimo@data$PROBAU # combi_low</span>
 
 <span class="co"># compute ABIMO variable STR_FLGES (m2 street area)</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">STR_FLGES</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makeSTR_FLGES.html">makeSTR_FLGES</a></span><span class="op">(</span>
@@ -238,13 +242,13 @@ Workflow in RStudio:
 <span class="co">## https://kwb-r.github.io/keys.lid/articles/scenarios.html#permeable-pavements</span>
 <span class="co">##</span>
 <span class="co"># 100 % permeable pavements: 180mm.per.hour_no-drainage</span>
-<span class="co">#abimo@data$PROVGU &lt;- (1-100*(0.572-0.152)/50)*abimo@data$PROVGU</span>
+<span class="co">#abimo@data$PROVGU &lt;- (1-100*(0.572-0.152)/50)*abimo@data$PROVGU # combi_high</span>
 <span class="co">#  50 % permeable pavements: 180mm.per.hour_no-drainage</span>
-<span class="co">#abimo@data$PROVGU &lt;- (1-50*(0.572-0.152)/50)*abimo@data$PROVGU</span>
+<span class="co">#abimo@data$PROVGU &lt;- (1-50*(0.572-0.152)/50)*abimo@data$PROVGU # combi_medium</span>
 <span class="co">#  25 % permeable pavements: 180mm.per.hour_no-drainage</span>
 <span class="co">#abimo@data$PROVGU &lt;- (1-25*(0.572-0.152)/50)*abimo@data$PROVGU</span>
 <span class="co">#  10 % permeable pavements: 180mm.per.hour_no-drainage</span>
-<span class="co">#abimo@data$PROVGU &lt;- (1-10*(0.572-0.152)/50)*abimo@data$PROVGU</span>
+<span class="co">#abimo@data$PROVGU &lt;- (1-10*(0.572-0.152)/50)*abimo@data$PROVGU # combi_low</span>
 
 <span class="co"># use raw code to compute and assign remaining ABIMO variables manually</span>
 
@@ -265,6 +269,21 @@ Workflow in RStudio:
 
 <span class="co"># % imperviousness streets</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VGSTRASSE</span> <span class="op">&lt;-</span> <span class="va">share_vg_str</span> <span class="co">#100 -&gt; 90.0402</span>
+
+<span class="co">## Decoupling from SWMM modelling: </span>
+<span class="co">## https://kwb-r.github.io/keys.lid/articles/scenarios.html#bioretention-cell</span>
+<span class="co">## scenario: 3.6mm.per.h_mulde_no-drainage</span>
+
+<span class="co"># 40 % of street area (unsealed area used as bioretention-cell)</span>
+<span class="co">#abimo@data$VGSTRASSE &lt;- round(abimo@data$VGSTRASSE - 40*(57.2-15.2)/50,1) #56.4 # combi_high</span>
+<span class="co"># 20 % of street area (unsealed area used as bioretention-cell)</span>
+<span class="co">#abimo@data$VGSTRASSE &lt;- round(abimo@data$VGSTRASSE - 20*(57.2-15.2)/50,1) #73.2 # combi_medium</span>
+<span class="co"># 10 % of street area (unsealed area used as bioretention-cell)</span>
+<span class="co">#abimo@data$VGSTRASSE &lt;- round(abimo@data$VGSTRASSE - 10*(57.2-15.2)/50,1) #81.6</span>
+<span class="co">#  5 % of street area (unsealed area used as bioretention-cell)</span>
+<span class="co">#abimo@data$VGSTRASSE &lt;- round(abimo@data$VGSTRASSE - 5*(57.2-15.2)/50,1) #85.8 # combi_low</span>
+
+
 
 <span class="co"># %cover types in other imperv. areas (PROVGU)</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">BELAG1</span> <span class="op">&lt;-</span> <span class="va">share_belag</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="co">#100 -&gt; 34.69844</span>
@@ -410,7 +429,7 @@ Workflow in RStudio:
 <span class="co"># run ABIMO manually in GUI ----------------------------------------------------</span>
 <span class="va">abimo_out</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'abimo_%sout.dbf'</span>, <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>
 <span class="kw">if</span><span class="op">(</span><span class="op">!</span><span class="fu">fs</span><span class="fu">::</span><span class="fu"><a href="http://fs.r-lib.org/reference/file_access.html">file_exists</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo_exe</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span>
-  <span class="kw"><a href="https://rdrr.io/r/base/stop.html">stop</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cat.html">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">"ABIMO executale does not exist: %s
+  <span class="kw"><a href="https://rdrr.io/r/base/stop.html">stop</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cat.html">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">"ABIMO executable does not exist: %s
 Please copy to this location"</span>, <span class="va">paths</span><span class="op">$</span><span class="va">abimo_exe</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
 <span class="op">}</span> <span class="kw">else</span> <span class="op">{</span>
 <span class="fu"><a href="https://rdrr.io/r/base/message.html">message</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cat.html">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">"Run ABIMO executable manually:
@@ -487,7 +506,8 @@ Please copy to this location"</span>, <span class="va">paths</span><span class="
 <span class="co">#   file_ABIMO_in = abimo_inp_dbf_path</span>
 <span class="co"># )</span>
 
-<span class="va">scenario_results</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind.html">bind_rows</a></span><span class="op">(</span><span class="va">scenario_results_list</span><span class="op">)</span>
+<span class="va">scenario_results</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind.html">bind_rows</a></span><span class="op">(</span><span class="va">scenario_results_list</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>vrr <span class="op">=</span> <span class="fl">1</span> <span class="op">-</span> <span class="va">.data</span><span class="op">$</span><span class="va">runoff_cbm</span><span class="op">/</span><span class="va">.data</span><span class="op">$</span><span class="va">rainfall_cbm</span><span class="op">)</span>
 
 
 
