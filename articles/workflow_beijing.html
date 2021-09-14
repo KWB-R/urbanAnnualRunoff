@@ -201,17 +201,17 @@ Workflow in RStudio:
 <span class="co">## https://kwb-r.github.io/keys.lid/articles/scenarios.html#green-roof</span>
 <span class="co">##</span>
 <span class="co"># 100 % green-roof: with_berm_intensive_no-drainmat</span>
-<span class="co">#abimo@data$PROBAU &lt;- (1-100*(90.42-15.2)/100)*abimo@data$PROBAU # combi_high</span>
+<span class="co">#abimo@data$PROBAU &lt;- (1-1*(90.42-15.2)/100)*abimo@data$PROBAU # combi_high</span>
 <span class="co"># 50 % green-roof: with_berm_intensive_no-drainmat</span>
-<span class="co">#abimo@data$PROBAU &lt;- (1-50*(90.42-15.2)/100)*abimo@data$PROBAU # combi_medium</span>
+<span class="co">#abimo@data$PROBAU &lt;- (1-0.5*(90.42-15.2)/100)*abimo@data$PROBAU # combi_medium</span>
 <span class="co"># 25 % green-roof: with_berm_intensive_no-drainmat</span>
-<span class="co">#abimo@data$PROBAU &lt;- (1-25*(90.42-15.2)/100)*abimo@data$PROBAU </span>
+<span class="co">#abimo@data$PROBAU &lt;- (1-0.25*(90.42-15.2)/100)*abimo@data$PROBAU </span>
 <span class="co"># 100 % green-roof: with_berm_extensive_no-drainmat</span>
-<span class="co">#abimo@data$PROBAU &lt;- (1-100*(72.6-15.2)/100)*abimo@data$PROBAU</span>
+<span class="co">#abimo@data$PROBAU &lt;- (1-1*(72.6-15.2)/100)*abimo@data$PROBAU</span>
 <span class="co"># 50 % green-roof: with_berm_extensive_no-drainmat</span>
-<span class="co">#abimo@data$PROBAU &lt;- (1-50*(72.6-15.2)/100)*abimo@data$PROBAU</span>
+<span class="co">#abimo@data$PROBAU &lt;- (1-0.5*(72.6-15.2)/100)*abimo@data$PROBAU</span>
 <span class="co"># 25 % green-roof: with_berm_extensive_no-drainmat</span>
-<span class="co">#abimo@data$PROBAU &lt;- (1-25*(72.6-15.2)/100)*abimo@data$PROBAU # combi_low</span>
+<span class="co">#abimo@data$PROBAU &lt;- (1-0.25*(72.6-15.2)/100)*abimo@data$PROBAU # combi_low</span>
 
 <span class="co"># compute ABIMO variable STR_FLGES (m2 street area)</span>
 <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">STR_FLGES</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makeSTR_FLGES.html">makeSTR_FLGES</a></span><span class="op">(</span>
