@@ -364,9 +364,9 @@ get_abimo_stats <- function(abimo_inpout) {
 
 tibble::tibble(
   catchment_km2 = round(sum(as.numeric(abimo_inpout$FLAECHE))/1000000, 2),
-  rainfall_cbm = sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$REGENJA)/1000),
-  runoff_cbm = sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$ROW)/1000),
-  infiltration_cbm = sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$RI)/1000),  
+  rainfall_cbm = round(sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$REGENJA)/1000),0),
+  runoff_cbm = round(sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$ROW)/1000),0),
+  infiltration_cbm = round(sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$RI)/1000),0),  
   evapotrans_cbm = sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$VERDUNSTUN)/1000)
 )
 }
