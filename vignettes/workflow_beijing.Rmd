@@ -306,9 +306,9 @@ abimo@data <- kwb.utils::selectColumns(abimo@data,
                                        columns = requiredCols)
 
 # format numbers to 0 decimal places (avoid 'pseudo-accuracy')
-abimo@data[, 8:ncol(abimo@data)] <- round(
-  abimo@data[, 8:ncol(abimo@data)],
-  digits = 0)
+#abimo@data[, 8:ncol(abimo@data)] <- round(
+#  abimo@data[, 8:ncol(abimo@data)],
+#  digits = 0)
 
 # change decimal separator to comma
 # (ABIMO does not run correctly otherwise) 
