@@ -38,6 +38,9 @@ path_list <- list(
   site = "Beijing",
   data = "WP2_SUW_pollution_<site>",
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
+  abimo_inp_shp = "<abimo>/abimo_<site>.shp",
+  abimo_inp_dbf = "<abimo>/abimo_<site>.dbf",
+  abimo_out = "abimo_<site>out.dbf",
   abimo_berlin = "<abimo>/abimo_2019_mitstrassen.dbf",
   abimo_scenarios = "<abimo>/scenarios/de-coupling",
   abimo_config_original = "<abimo>/config_original.xml",
@@ -325,22 +328,17 @@ abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
 
 
 # write ABIMO input table
-abimo_inp <- sprintf('abimo_%s.shp', paths$site)
-abimo_inp_path <- file.path(paths$abimo, abimo_inp)
-
 raster::shapefile(x=abimo, 
-                  filename=abimo_inp_path,
+                  filename=paths$abimo_inp_shp,
                   overwrite=TRUE)
 
-abimo_inp_dbf <- sprintf('abimo_%s.dbf', paths$site)
-abimo_inp_dbf_path <- file.path(paths$abimo, abimo_inp_dbf)
+
 kwb.abimo::write.dbf.abimo(abimo, 
-                           new_dbf = abimo_inp_dbf_path)
+                           new_dbf = paths$abimo_inp_dbf)
 
 
 
 # run ABIMO manually in GUI ----------------------------------------------------
-abimo_out <- sprintf('abimo_%sout.dbf', paths$site)
 if(!fs::file_exists(paths$abimo_exe)) {
   stop(cat(sprintf("ABIMO executable does not exist: %s
 Please copy to this location", paths$abimo_exe)))
@@ -349,7 +347,7 @@ message(cat(sprintf("Run ABIMO executable manually:
 1. Select input file: \"%s\"
 2. Save it under: \"%s\"", 
                     abimo_inp_path, 
-                    abimo_out))
+                    paths$abimo_out))
 )
 }      
 kwb.utils::hsOpenWindowsExplorer(dirname(paths$abimo_exe))
@@ -358,73 +356,9 @@ kwb.utils::hsOpenWindowsExplorer(dirname(paths$abimo_exe))
 # post-process ABIMO output file -> join it with input shape file for 
 # visualization in GIS
 
-
-
-get_abimo_stats <- function(abimo_inpout) {
-
-tibble::tibble(
-  catchment_km2 = round(sum(as.numeric(abimo_inpout$FLAECHE))/1000000, 2),
-  rainfall_cbm = round(sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$REGENJA)/1000),0),
-  runoff_cbm = round(sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$ROW)/1000),0),
-  infiltration_cbm = round(sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$RI)/1000),0),  
-  evapotrans_cbm = round(sum(as.numeric(abimo_inpout$FLAECHE)*as.numeric(abimo_inpout$VERDUNSTUN)/1000),0)
-)
-}
-
-scenario_dirs <- list.dirs(paths$abimo_scenarios)[-1]
-
-scenario_results_list <- lapply(scenario_dirs, function(scenario_dir) {
-
-scenario_name <- basename(scenario_dir)
-
-abimo_inpout <- urbanAnnualRunoff::postProcessABIMO(
-  path_input = file.path(scenario_dir, abimo_inp),
-  path_output = file.path(scenario_dir, abimo_out)
-)
-
-# write out joined table output as shapefile
-outFile <- file.path(scenario_dir, 
-                     sprintf("abimo_%s_waterbalance.shp", paths$site))
-  
-raster::shapefile(x = abimo_inpout, 
-                  filename = outFile, 
-                  overwrite = TRUE)
-
-# compute emissions Tongzhou with OgRe AMC (annual mean concentration) database
-conc <- urbanAnnualRunoff::read_concentrations(path = paths$emissions_input)
-
-abimo_inpout_emissions <- urbanAnnualRunoff::calculate_loads(
-  abimo_inpout = abimo_inpout, 
-  concentrations = conc
-  )
-
-# write out joined table output as shapefile
-outFile <- file.path(scenario_dir, 
-                     sprintf("abimo_%s_emissions.shp", paths$site))
-  
-raster::shapefile(x = abimo_inpout_emissions, 
-                  filename = outFile, 
-                  overwrite = TRUE)
-
-tibble::tibble(scenario_name = scenario_name, 
-               get_abimo_stats(abimo_inpout),
-               abimo_inpout = list(tibble::as_tibble(abimo_inpout@data)),
-               abimo_inpout_emissions = list(tibble::as_tibble(abimo_inpout_emissions)))
-})
-
-
-# kwb.abimo::abimo_comb_in_out() works only with DBF as input
-# abimo_inpout <- kwb.abimo::abimo_comb_in_out(
-#   file_ABIMO_out = file.path(paths$abimo, abimo_out),
-#   file_ABIMO_in = abimo_inp_dbf_path
-# )
-
-scenario_results_beijing <- dplyr::bind_rows(scenario_results_list) %>% 
-  dplyr::mutate(vrr = round(1 - .data$runoff_cbm/.data$rainfall_cbm,3))
+scenario_results_beijing <- get_scenario_results(paths)
 
 #usethis::use_data(scenario_results_beijing, overwrite = TRUE)
-
-
 
 }
 ```
