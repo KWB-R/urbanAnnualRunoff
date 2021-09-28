@@ -27,14 +27,11 @@ Depends:
 Imports: 
     dplyr,
     foreign,
-    fs,
     kwb.utils,
     lubridate,
     magrittr,
     raster,
     rlang,
-    rgdal,
-    remotes,
     stringr,
     tibble,
     tidyselect
@@ -42,9 +39,11 @@ Suggests:
     caret, 
     covr,
     DT,
+    fs,
     knitr,
     kwb.abimo,
     kwb.ml,
+    remotes,
     rmarkdown
 VignetteBuilder: 
     knitr

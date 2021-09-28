@@ -23,7 +23,5 @@
 #'   \item{Ni.kg_yr}{Nickel (in kg/year) }
 #'   \item{Va.kg_yr}{Vanadium (in kg/year) }
 #'   \item{Zn.kg_yr}{Zinc (in kg/year) }
-#'
-
 #' }
 "scenario_results_beijing"
