@@ -90,7 +90,11 @@
 
       
 
-      </header><script src="workflow_jinxi_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
+      </header><script src="workflow_jinxi_files/accessible-code-block-0.0.1/empty-anchor.js"></script><script src="workflow_jinxi_files/htmlwidgets-1.5.4/htmlwidgets.js"></script><link href="workflow_jinxi_files/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet">
+<script src="workflow_jinxi_files/datatables-binding-0.19/datatables.js"></script><script src="workflow_jinxi_files/jquery-3.6.0/jquery-3.6.0.min.js"></script><link href="workflow_jinxi_files/dt-core-1.10.20/css/jquery.dataTables.min.css" rel="stylesheet">
+<link href="workflow_jinxi_files/dt-core-1.10.20/css/jquery.dataTables.extra.css" rel="stylesheet">
+<script src="workflow_jinxi_files/dt-core-1.10.20/js/jquery.dataTables.min.js"></script><link href="workflow_jinxi_files/crosstalk-1.1.1/css/crosstalk.css" rel="stylesheet">
+<script src="workflow_jinxi_files/crosstalk-1.1.1/js/crosstalk.min.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Workflow: Jinxi</h1>
@@ -103,327 +107,296 @@
 
     
     
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co">### prerequisites (64bit R)</span>
-<span class="kw">if</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html">Sys.getenv</a></span><span class="op">(</span><span class="st">"R_ARCH"</span><span class="op">)</span> <span class="op">!=</span> <span class="st">"/x64"</span><span class="op">)</span> <span class="op">{</span>
-  <span class="kw"><a href="https://rdrr.io/r/base/stop.html">stop</a></span><span class="op">(</span><span class="st">"Spatial operations need a lot of RAM. Use of 64bit R is required. 
-  
-Workflow in RStudio:  
-1. Go to 'Tools' (top pane)
-2. Select 'Global Options' 
-3. Select 'General' 
-4. Under 'R Sessions' select 'Change' 
-5. Select 'Use the machine`s default R version of R64 (64-bit)'
-6. Close all R Studio sessions  
-7. Restart R Studio"</span>
-<span class="op">)</span>
-<span class="op">}</span> <span class="kw">else</span> <span class="op">{</span>
-
-
-<span class="va">path_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>
-  root_path <span class="op">=</span> <span class="st">"C:/kwb/projects/keys/Data-Work packages"</span>,
-  site <span class="op">=</span> <span class="st">"Jinxi"</span>,
-  data <span class="op">=</span> <span class="st">"WP2_SUW_pollution_&lt;site&gt;"</span>,
-  abimo <span class="op">=</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/abimo"</span>,
-  abimo_exe <span class="op">=</span> <span class="st">"&lt;abimo&gt;/Abimo3_2.exe"</span>,
-  gis <span class="op">=</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/gis"</span>,
-  climate <span class="op">=</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/climate"</span>,
-  emissions_input <span class="op">=</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/emissions/input/annual_mean_conc.csv"</span>,
-  emissions_output <span class="op">=</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/emissions/output"</span>
-<span class="op">)</span>
-
-<span class="va">paths</span> <span class="op">&lt;-</span> <span class="fu">kwb.utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.utils/man/resolve.html">resolve</a></span><span class="op">(</span><span class="va">path_list</span><span class="op">)</span>
-
-<span class="co"># load shapefile containing subcatchments ('blockteilflächen')</span>
-<span class="va">abimo</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/shapefile.html">shapefile</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">gis</span>, <span class="st">'input_subareas.shp'</span><span class="op">)</span><span class="op">)</span>
-
-<span class="co"># make ABIMO 'CODE' column</span>
-<span class="fu"><a href="https://rdrr.io/r/base/names.html">names</a></span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"CODE"</span> 
-
-<span class="co"># pad CODE with zeroes to match output of ABIMO</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">CODE</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/padCODE.html">padCODE</a></span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">CODE</span><span class="op">)</span>
-
-<span class="co"># build classification model</span>
-<span class="fu">kwb.ml</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.ml/man/buildClassMod.html">buildClassMod</a></span><span class="op">(</span>
-  rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
-  image <span class="op">=</span> <span class="st">'input_image.img'</span>,
-  groundTruth <span class="op">=</span> <span class="st">'input_groundtruth.shp'</span>,
-  groundTruthValues <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="st">'roof'</span> <span class="op">=</span> <span class="fl">1</span>, 
-                           <span class="st">'street'</span> <span class="op">=</span> <span class="fl">2</span>,
-                           <span class="st">'pervious'</span> <span class="op">=</span> <span class="fl">3</span>,
-                           <span class="st">'shadow'</span> <span class="op">=</span> <span class="fl">4</span>,
-                           <span class="st">'water'</span> <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>,
-  spectrSigName <span class="op">=</span> <span class="st">'spectrSig.Rdata'</span>,
-  modelName <span class="op">=</span> <span class="st">'rForest.Rdata'</span>,
-  overlayExists <span class="op">=</span> <span class="cn">FALSE</span>,
-  nCores <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  mtryGrd <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span>, 
-  ntreeGrd<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html">seq</a></span><span class="op">(</span><span class="fl">80</span>, <span class="fl">150</span>, by<span class="op">=</span><span class="fl">10</span><span class="op">)</span>,
-  nfolds <span class="op">=</span> <span class="fl">3</span>, 
-  nodesize <span class="op">=</span> <span class="fl">3</span>, 
-  cvrepeats <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>
-
-<span class="co"># check model performance</span>
-<span class="fu"><a href="https://rdrr.io/r/base/load.html">load</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,<span class="st">"rForest.Rdata"</span><span class="op">)</span><span class="op">)</span>
-<span class="fu">caret</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/caret/man/confusionMatrix.html">confusionMatrix</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">model</span><span class="op">$</span><span class="va">finalModel</span><span class="op">$</span><span class="va">predicted</span>, 
-                       reference <span class="op">=</span> <span class="va">model</span><span class="op">$</span><span class="va">trainingData</span><span class="op">$</span><span class="va">.outcome</span>, 
-                       mode <span class="op">=</span> <span class="st">'prec_recall'</span><span class="op">)</span>
-                       
-<span class="co"># classify image for roofs and streets</span>
-<span class="fu">kwb.ml</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.ml/man/predictSurfClass.html">predictSurfClass</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
-                                    modelName <span class="op">=</span> <span class="st">'rForest.Rdata'</span>,
-                                    image <span class="op">=</span> <span class="st">'input_image.img'</span>,
-                                    predName <span class="op">=</span> <span class="st">'classified_image.img'</span><span class="op">)</span>
-
-<span class="co"># make overlay object (list where each element is a vector of the pixel values </span>
-<span class="co"># of the classified image for each subcatchment)</span>
-<span class="fu">kwb.ml</span><span class="fu">::</span><span class="fu">makeOverlay</span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
-                               rasterData <span class="op">=</span> <span class="st">'classified_image.img'</span>,
-                               subcatchmSPobject <span class="op">=</span> <span class="va">abimo</span>,
-                               overlayName <span class="op">=</span> <span class="st">'surfType'</span><span class="op">)</span>
-<span class="co"># make ABIMO variable FLGES</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FLGES</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makeFLGES.html">makeFLGES</a></span><span class="op">(</span>subcatchmSPobject <span class="op">=</span> <span class="va">abimo</span><span class="op">)</span>
-
-<span class="co"># compute ABIMO variable PROBAU (%roof)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROBAU</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makePROBAU.html">makePROBAU</a></span><span class="op">(</span>
-  rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
-  rasterData <span class="op">=</span> <span class="st">'classified_image.img'</span>,
-  overlayName <span class="op">=</span> <span class="st">'surfType'</span>,
-  targetValue <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>
-  
-<span class="co"># compute ABIMO variable STR_FLGES (m2 street area)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">STR_FLGES</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makeSTR_FLGES.html">makeSTR_FLGES</a></span><span class="op">(</span>
-  rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
-  subcatchmSPobject <span class="op">=</span> <span class="va">abimo</span>,
-  mask <span class="op">=</span> <span class="st">'input_maskUrbanCore.shp'</span>,
-  rasterData <span class="op">=</span> <span class="st">'classified_image.img'</span>,
-  overlayName <span class="op">=</span> <span class="st">'surfType'</span>,
-  targetValue <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>
-
-<span class="co"># compute ABIMO variable VG (% soil sealing)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VG</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/makeVG.html">makeVG</a></span><span class="op">(</span>
-  rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">gis</span>,
-  subcatchmSPobject <span class="op">=</span> <span class="va">abimo</span>,
-  rasterData <span class="op">=</span> <span class="st">'input_impervious.tif'</span>,
-  targetValue <span class="op">=</span> <span class="fl">80</span><span class="op">)</span>
-
-<span class="co"># compute annual and summer rainfall. </span>
-<span class="co"># *** potential enhancement: ***</span>
-<span class="co"># return the multiannual average annual rainfall. care must be taken to exclude</span>
-<span class="co"># incomplete years from the average calculation. same for summer rainfall</span>
-<span class="va">precipitation</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/computeABIMOclimate.html">computeABIMOclimate</a></span><span class="op">(</span>
-  rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">climate</span>,
-  fileName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'raw_climateeng_precipitation_daily_%s.txt'</span>, 
-                     <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>,
-  skip <span class="op">=</span> <span class="fl">6</span>, sep <span class="op">=</span> <span class="st">''</span>, dec <span class="op">=</span> <span class="st">'.'</span>,
-  outAnnual <span class="op">=</span> <span class="st">'precipitation_annual.txt'</span>,
-  outSummer <span class="op">=</span><span class="st">'precipitation_summer.txt'</span><span class="op">)</span>
-<span class="co"># compute annual and summer ETP. this goes manually into the ABIMO config file</span>
-  <span class="va">evapotranspiration</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/computeABIMOclimate.html">computeABIMOclimate</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">climate</span>,
-                    fileName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'raw_climateeng_etp_daily_%s.txt'</span>, 
-                                       <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>,
-                    skip <span class="op">=</span> <span class="fl">6</span>, sep <span class="op">=</span> <span class="st">''</span>, dec <span class="op">=</span> <span class="st">'.'</span>,
-                    outAnnual <span class="op">=</span> <span class="st">'etp_annual.txt'</span>,
-                    outSummer <span class="op">=</span> <span class="st">'etp_summer.txt'</span><span class="op">)</span>
-
-<span class="co"># use raw code to compute and assign remaining ABIMO variables manually</span>
-<span class="co"># raw code ------------------------------------------------------------------------------</span>
-
-<span class="co"># raw code ------------------------------------------------------------------------------</span>
-
-<span class="co"># compute ABIMO variable PROVGU (% other impervious areas) as </span>
-<span class="co"># PROVGU = VG - PROBAU, setting any negative values to 0. this</span>
-<span class="co"># happens for only &lt;10% of subcatchments, and results mainly from</span>
-<span class="co"># differences in spatial resolution and classification differences</span>
-<span class="co"># between both datasets (our classified image and the global land </span>
-<span class="co"># use dataset)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROVGU</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html">ifelse</a></span><span class="op">(</span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VG</span> <span class="op">-</span> <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROBAU</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span>,
-                            <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VG</span> <span class="op">-</span> <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">PROBAU</span>,
-                            <span class="fl">0</span><span class="op">)</span>
-
-<span class="co"># % imperviousness streets</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">VGSTRASSE</span> <span class="op">&lt;-</span> <span class="fl">100</span>
-
-<span class="co"># %cover types in other imperv. areas (PROVGU)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">BELAG1</span> <span class="op">&lt;-</span> <span class="fl">100</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">BELAG2</span> <span class="op">&lt;-</span> <span class="fl">0</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">BELAG3</span> <span class="op">&lt;-</span> <span class="fl">0</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">BELAG4</span> <span class="op">&lt;-</span> <span class="fl">0</span>
-
-<span class="co"># %cover types in street areas</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">STR_BELAG1</span> <span class="op">&lt;-</span> <span class="fl">100</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">STR_BELAG2</span> <span class="op">&lt;-</span> <span class="fl">0</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">STR_BELAG3</span> <span class="op">&lt;-</span> <span class="fl">0</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">STR_BELAG4</span> <span class="op">&lt;-</span> <span class="fl">0</span>
-
-<span class="co"># identifiers</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">BEZIRK</span> <span class="op">&lt;-</span> <span class="fl">1</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">STAGEB</span> <span class="op">&lt;-</span> <span class="fl">1</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">BLOCK</span> <span class="op">&lt;-</span> <span class="fl">1</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">TEILBLOCK</span> <span class="op">&lt;-</span> <span class="fl">1</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">NUTZUNG</span> <span class="op">&lt;-</span> <span class="fl">21</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">TYP</span> <span class="op">&lt;-</span> <span class="fl">21</span>
-
-
-<span class="co"># annual rainfall (this can be automatized by making 'computeABIMOclimate'</span>
-<span class="co"># return the multiannual average annual rainfall. care must be taken to exclude</span>
-<span class="co"># incomplete years from the average calculation)</span>
-
-<span class="co"># manually averaged annual rainfall and summer rainfall</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">REGENJA</span> <span class="op">&lt;-</span> <span class="fl">1744</span> <span class="co"># averaged manually</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">REGENSO</span> <span class="op">&lt;-</span> <span class="fl">1258</span> <span class="co"># averaged manually</span>
-  
-<span class="co"># better version using dplyr</span>
-<span class="co">#year_min &lt;- 2015</span>
-<span class="co">#year_max &lt;- 2019</span>
-<span class="co">#abimo@data$REGENJA &lt;- precipitation$total %&gt;% </span>
-<span class="co">#  dplyr::filter(.data$year &gt;= year_min &amp; .data$year &lt;= year_max) %&gt;% </span>
-<span class="co">#  dplyr::summarise(value_mean = mean(.data$value)) %&gt;% </span>
-<span class="co">#  dplyr::pull()</span>
-<span class="co">#abimo@data$REGENSO &lt;- precipitation$summer %&gt;% </span>
-<span class="co">#  dplyr::filter(.data$year &gt;= year_min &amp; .data$year &lt;= year_max) %&gt;% </span>
-<span class="co">#  dplyr::summarise(value_mean = mean(.data$value)) %&gt;%  </span>
-<span class="co">#  dplyr::pull()</span>
-
-<span class="co">### calculate mean evapotranspiration (total, summer) to be defined as input </span>
-<span class="co">### in ABIMO "config.xml" file</span>
-<span class="co"># ept_mean &lt;- tibble::tibble(total = evapotranspiration$total %&gt;% </span>
-<span class="co">#   dplyr::filter(.data$year &gt;= year_min &amp; .data$year &lt;= year_max) %&gt;% </span>
-<span class="co">#   dplyr::summarise(value_mean = mean(value)) %&gt;% </span>
-<span class="co">#   as.numeric(), </span>
-<span class="co">#   summer = evapotranspiration$summer %&gt;% </span>
-<span class="co">#   dplyr::filter(.data$year &gt;= year_min &amp; .data$year &lt;= year_max) %&gt;% </span>
-<span class="co">#   dplyr::summarise(value_mean = mean(.data$value)) %&gt;% </span>
-<span class="co">#   as.numeric())</span>
-<span class="co">#   </span>
-<span class="co">#   </span>
-<span class="co"># abimo_config &lt;- file.path(paths$abimo, "config.xml")</span>
-<span class="co"># </span>
-<span class="co"># message(sprintf("Manually set values in ABIMO config file:</span>
-<span class="co"># '%s'</span>
-<span class="co"># </span>
-<span class="co"># In '&lt;section name=\"PotentielleVerdunstung\"&gt;\"' </span>
-<span class="co"># </span>
-<span class="co"># Enter the following values for for 'BEZIRK = 1' and also default 'BEZIRK = 0'</span>
-<span class="co"># etp: %4.0f</span>
-<span class="co"># etps: %4.1f",</span>
-<span class="co">#                 abimo_config,</span>
-<span class="co">#                 ept_mean$total, </span>
-<span class="co">#                 ept_mean$summer))</span>
-<span class="co"># ### open ABIMO config for manual data input</span>
-<span class="co"># kwb.utils::hsOpenWindowsExplorer(abimo_config)</span>
-
-  
-<span class="co">#abimo_config &lt;- file.path(paths$abimo, "config.xml")</span>
-
-<span class="co">#message(sprintf("Manually set values in ABIMO config file:</span>
-<span class="st">'%s'</span>
-
-<span class="co">#In '&lt;section name=\"PotentielleVerdunstung\"&gt;\"' </span>
-
-<span class="co">#Enter the following values for for 'BEZIRK = 1' and also default 'BEZIRK = 0'</span>
-<span class="co">#etp: %4.0f</span>
-<span class="co">#etps: %4.1f",</span>
-<span class="co">#                abimo_config,</span>
-<span class="co">#                ept_mean$total, </span>
-<span class="co">#                ept_mean$summer))</span>
-<span class="co">### open ABIMO config for manual data input</span>
-<span class="co">#kwb.utils::hsOpenWindowsExplorer(abimo_config)</span>
-
-<span class="co"># channelization degrees. these are set manually since there is no data</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KANAL</span><span class="op">&lt;-</span> <span class="fl">1</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KAN_BEB</span><span class="op">&lt;-</span> <span class="fl">100</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KAN_VGU</span><span class="op">&lt;-</span> <span class="fl">100</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">KAN_STR</span><span class="op">&lt;-</span> <span class="fl">100</span>
-
-<span class="co"># soil field capacity and groundwater level (personal communication, Dr. Lipin Li, </span>
-<span class="co"># Harbin Inst. of Technology)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FELD_30</span> <span class="op">&lt;-</span> <span class="fl">30</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FELD_150</span> <span class="op">&lt;-</span> <span class="fl">30</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">$</span><span class="va">FLUR</span> <span class="op">&lt;-</span> <span class="fl">1.17</span>
-
-<span class="co"># select required columns and write out new shapefile</span>
-<span class="va">requiredCols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">'CODE'</span>, <span class="st">'BEZIRK'</span>, <span class="st">'STAGEB'</span>, <span class="st">'BLOCK'</span>, <span class="st">'TEILBLOCK'</span>,
-                  <span class="st">'NUTZUNG'</span>, <span class="st">'TYP'</span>,
-                  <span class="st">'FLGES'</span>, <span class="st">'STR_FLGES'</span>,
-                  <span class="st">'PROBAU'</span>, <span class="st">'PROVGU'</span>, <span class="st">'VGSTRASSE'</span>,
-                  <span class="st">'BELAG1'</span>, <span class="st">'BELAG2'</span>, <span class="st">'BELAG3'</span>, <span class="st">'BELAG4'</span>,
-                  <span class="st">'STR_BELAG1'</span>, <span class="st">'STR_BELAG2'</span>, <span class="st">'STR_BELAG3'</span>, <span class="st">'STR_BELAG4'</span>,
-                  <span class="st">'KAN_BEB'</span>, <span class="st">'KAN_VGU'</span>, <span class="st">'KAN_STR'</span>,
-                  <span class="st">'REGENJA'</span>, <span class="st">'REGENSO'</span>,
-                  <span class="st">'FELD_30'</span>, <span class="st">'FELD_150'</span>, <span class="st">'FLUR'</span><span class="op">)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">[</span>, <span class="va">requiredCols</span><span class="op">]</span>
-
-<span class="co"># format numbers to 0 decimal places</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">[</span>, <span class="fl">8</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html">ncol</a></span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span><span class="op">(</span>
-  <span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">[</span>, <span class="fl">8</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html">ncol</a></span><span class="op">(</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span><span class="op">)</span><span class="op">]</span>,
-  digits <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>
-
-<span class="co"># change decimal separator to comma (ABIMO does not run correctly otherwise)</span>
-<span class="va">abimo</span><span class="op">@</span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html">apply</a></span><span class="op">(</span>X<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html">apply</a></span><span class="op">(</span>X<span class="op">=</span><span class="va">abimo</span><span class="op">@</span><span class="va">data</span>,
-                                         <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,
-                                         FUN<span class="op">=</span><span class="va">as.character</span><span class="op">)</span>,
-                                 <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,
-                                 FUN<span class="op">=</span><span class="va">gsub</span>,
-                                 pattern<span class="op">=</span><span class="st">"\\."</span>,
-                                 replacement<span class="op">=</span><span class="st">","</span><span class="op">)</span>,
-                           stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>
-
-<span class="co"># write ABIMO input table</span>
-<span class="va">abimo_inp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'abimo_%s.shp'</span>, <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>
-<span class="va">abimo_inp_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>, <span class="va">abimo_inp</span><span class="op">)</span>
-<span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/shapefile.html">shapefile</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">abimo</span>, 
-                  filename<span class="op">=</span><span class="va">abimo_inp_path</span>,
-                  overwrite<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>
-
-
-<span class="co"># run ABIMO manually in GUI ----------------------------------------------------</span>
-<span class="va">abimo_out</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">'abimo_%sout.dbf'</span>, <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span>
-<span class="kw">if</span><span class="op">(</span><span class="op">!</span><span class="fu">fs</span><span class="fu">::</span><span class="fu"><a href="http://fs.r-lib.org/reference/file_access.html">file_exists</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo_exe</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span>
-  <span class="kw"><a href="https://rdrr.io/r/base/stop.html">stop</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cat.html">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">"ABIMO executale does not exist: %s
-Please copy to this location"</span>, <span class="va">paths</span><span class="op">$</span><span class="va">abimo_exe</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
-<span class="op">}</span> <span class="kw">else</span> <span class="op">{</span>
-<span class="fu"><a href="https://rdrr.io/r/base/message.html">message</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cat.html">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">"Run ABIMO executable manually:
-1. Select input file: \"%s\"
-2. Save it under: \"%s\""</span>, 
-                    <span class="va">abimo_inp_path</span>, 
-                    <span class="va">abimo_out</span><span class="op">)</span><span class="op">)</span>
-<span class="op">)</span>
-      
-<span class="fu">kwb.utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kwb.utils/man/hsOpenWindowsExplorer.html">hsOpenWindowsExplorer</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">abimo_exe</span><span class="op">)</span>
-
-<span class="co"># postprocessing ----------------------------------------------------------------</span>
-<span class="co"># post-process ABIMO output file -&gt; join it with input shape file for </span>
-<span class="co"># visualization in GIS</span>
-<span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/postProcessABIMO.html">postProcessABIMO</a></span><span class="op">(</span>rawdir <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">abimo</span>,
-                 nameABIMOin <span class="op">=</span> <span class="va">abimo_inp</span>,
-                 nameABIMOout <span class="op">=</span> <span class="va">abimo_out</span>,
-                 ABIMOjoinedName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">"%s_joined.dbf"</span>, <span class="va">abimo_out</span><span class="op">)</span>
-                <span class="op">)</span>
-<span class="op">}</span>
-
-<span class="co"># compute emissions Jinxi with OgRe AMC (annual mean concentration) database</span>
-<span class="va">conc</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/read_concentrations.html">read_concentrations</a></span><span class="op">(</span>path <span class="op">=</span> <span class="va">paths</span><span class="op">$</span><span class="va">emissions_input</span><span class="op">)</span>
-
-<span class="va">abimo_inpout_emissions</span> <span class="op">&lt;-</span> <span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="fu"><a href="../reference/calculate_loads.html">calculate_loads</a></span><span class="op">(</span>
-  abimo_inpout <span class="op">=</span> <span class="va">abimo_inpout</span>, 
-  concentrations <span class="op">=</span> <span class="va">conc</span>
-  <span class="op">)</span>
-
-<span class="co"># write out joined table output as shapefile</span>
-<span class="va">outFile</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">paths</span><span class="op">$</span><span class="va">emissions_output</span>, 
-                     <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html">sprintf</a></span><span class="op">(</span><span class="st">"abimo_%s_emissions.shp"</span>, <span class="va">paths</span><span class="op">$</span><span class="va">site</span><span class="op">)</span><span class="op">)</span>
-  
-<span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/shapefile.html">shapefile</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">abimo_inpout_emissions</span>, 
-                  filename <span class="op">=</span> <span class="va">outFile</span>, 
-                  overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-
-<span class="op">}</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">### prerequisites (64bit R)</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="cf">if</span>(<span class="kw">Sys.getenv</span>(<span class="st">"R_ARCH"</span>) <span class="op">!=</span><span class="st"> "/x64"</span>) {</span>
+<span id="cb1-3"><a href="#cb1-3"></a>  <span class="kw">stop</span>(<span class="st">"Spatial operations need a lot of RAM. Use of 64bit R is required. </span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="st">  </span></span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="st">Workflow in RStudio:  </span></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="st">1. Go to 'Tools' (top pane)</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="st">2. Select 'Global Options' </span></span>
+<span id="cb1-8"><a href="#cb1-8"></a><span class="st">3. Select 'General' </span></span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="st">4. Under 'R Sessions' select 'Change' </span></span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="st">5. Select 'Use the machine`s default R version of R64 (64-bit)'</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="st">6. Close all R Studio sessions  </span></span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="st">7. Restart R Studio"</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a>)</span>
+<span id="cb1-14"><a href="#cb1-14"></a>} <span class="cf">else</span> {</span>
+<span id="cb1-15"><a href="#cb1-15"></a>  </span>
+<span id="cb1-16"><a href="#cb1-16"></a>path_list &lt;-<span class="st"> </span><span class="kw">list</span>(</span>
+<span id="cb1-17"><a href="#cb1-17"></a>  <span class="dt">root_path =</span> <span class="st">"C:/kwb/projects/keys/Data-Work packages"</span>,</span>
+<span id="cb1-18"><a href="#cb1-18"></a>  <span class="dt">site =</span> <span class="st">"Jinxi"</span>,</span>
+<span id="cb1-19"><a href="#cb1-19"></a>  <span class="dt">data =</span> <span class="st">"WP2_SUW_pollution_&lt;site&gt;"</span>,</span>
+<span id="cb1-20"><a href="#cb1-20"></a>  <span class="dt">abimo =</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/abimo"</span>,</span>
+<span id="cb1-21"><a href="#cb1-21"></a>  <span class="dt">abimo_inp_shp =</span> <span class="st">"&lt;abimo&gt;/abimo_&lt;site&gt;.shp"</span>,</span>
+<span id="cb1-22"><a href="#cb1-22"></a>  <span class="dt">abimo_inp_dbf =</span> <span class="st">"&lt;abimo&gt;/abimo_&lt;site&gt;.dbf"</span>,</span>
+<span id="cb1-23"><a href="#cb1-23"></a>  <span class="dt">abimo_out =</span> <span class="st">"abimo_&lt;site&gt;out.dbf"</span>,</span>
+<span id="cb1-24"><a href="#cb1-24"></a>  <span class="dt">abimo_berlin =</span> <span class="st">"&lt;abimo&gt;/abimo_2019_mitstrassen.dbf"</span>,</span>
+<span id="cb1-25"><a href="#cb1-25"></a>  <span class="dt">abimo_scenarios =</span> <span class="st">"&lt;abimo&gt;/scenarios/de-coupling"</span>,</span>
+<span id="cb1-26"><a href="#cb1-26"></a>  <span class="dt">abimo_config_original =</span> <span class="st">"&lt;abimo&gt;/config_original.xml"</span>,</span>
+<span id="cb1-27"><a href="#cb1-27"></a>  <span class="dt">abimo_config_modified =</span> <span class="st">"&lt;abimo&gt;/config.xml"</span>,</span>
+<span id="cb1-28"><a href="#cb1-28"></a>  <span class="dt">abimo_exe =</span> <span class="st">"&lt;abimo&gt;/Abimo3_2.exe"</span>,</span>
+<span id="cb1-29"><a href="#cb1-29"></a>  <span class="dt">gis =</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/gis"</span>,</span>
+<span id="cb1-30"><a href="#cb1-30"></a>  <span class="dt">climate =</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/climate"</span>,</span>
+<span id="cb1-31"><a href="#cb1-31"></a>  <span class="dt">emissions_input =</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/emissions/input/annual_mean_conc.csv"</span>,</span>
+<span id="cb1-32"><a href="#cb1-32"></a>  <span class="dt">emissions_output =</span> <span class="st">"&lt;root_path&gt;/&lt;data&gt;/_DataAnalysis/emissions/output"</span></span>
+<span id="cb1-33"><a href="#cb1-33"></a>)</span>
+<span id="cb1-34"><a href="#cb1-34"></a></span>
+<span id="cb1-35"><a href="#cb1-35"></a>paths &lt;-<span class="st"> </span>kwb.utils<span class="op">::</span><span class="kw">resolve</span>(path_list)</span>
+<span id="cb1-36"><a href="#cb1-36"></a></span>
+<span id="cb1-37"><a href="#cb1-37"></a><span class="co"># load shapefile containing subcatchments ('blockteilflächen')</span></span>
+<span id="cb1-38"><a href="#cb1-38"></a>abimo &lt;-<span class="st"> </span>raster<span class="op">::</span><span class="kw">shapefile</span>(<span class="kw">file.path</span>(paths<span class="op">$</span>gis, <span class="st">'input_subareas.shp'</span>))</span>
+<span id="cb1-39"><a href="#cb1-39"></a></span>
+<span id="cb1-40"><a href="#cb1-40"></a><span class="co"># make ABIMO 'CODE' column</span></span>
+<span id="cb1-41"><a href="#cb1-41"></a><span class="kw">names</span>(abimo<span class="op">@</span>data) &lt;-<span class="st"> "CODE"</span> </span>
+<span id="cb1-42"><a href="#cb1-42"></a></span>
+<span id="cb1-43"><a href="#cb1-43"></a><span class="co"># pad CODE with zeroes to match output of ABIMO</span></span>
+<span id="cb1-44"><a href="#cb1-44"></a>abimo<span class="op">@</span>data<span class="op">$</span>CODE &lt;-<span class="st"> </span>urbanAnnualRunoff<span class="op">::</span><span class="kw">padCODE</span>(abimo<span class="op">@</span>data<span class="op">$</span>CODE)</span>
+<span id="cb1-45"><a href="#cb1-45"></a></span>
+<span id="cb1-46"><a href="#cb1-46"></a><span class="co"># build classification model</span></span>
+<span id="cb1-47"><a href="#cb1-47"></a>kwb.ml<span class="op">::</span><span class="kw">buildClassMod</span>(</span>
+<span id="cb1-48"><a href="#cb1-48"></a>  <span class="dt">rawdir =</span> paths<span class="op">$</span>gis,</span>
+<span id="cb1-49"><a href="#cb1-49"></a>  <span class="dt">image =</span> <span class="st">'input_image.img'</span>,</span>
+<span id="cb1-50"><a href="#cb1-50"></a>  <span class="dt">groundTruth =</span> <span class="st">'input_groundtruth.shp'</span>,</span>
+<span id="cb1-51"><a href="#cb1-51"></a>  <span class="dt">groundTruthValues =</span> <span class="kw">list</span>(<span class="st">'roof'</span> =<span class="st"> </span><span class="dv">1</span>, </span>
+<span id="cb1-52"><a href="#cb1-52"></a>                           <span class="st">'street'</span> =<span class="st"> </span><span class="dv">2</span>,</span>
+<span id="cb1-53"><a href="#cb1-53"></a>                           <span class="st">'pervious'</span> =<span class="st"> </span><span class="dv">3</span>,</span>
+<span id="cb1-54"><a href="#cb1-54"></a>                           <span class="st">'shadow'</span> =<span class="st"> </span><span class="dv">4</span>,</span>
+<span id="cb1-55"><a href="#cb1-55"></a>                           <span class="st">'water'</span> =<span class="st"> </span><span class="dv">5</span>),</span>
+<span id="cb1-56"><a href="#cb1-56"></a>  <span class="dt">spectrSigName =</span> <span class="st">'spectrSig.Rdata'</span>,</span>
+<span id="cb1-57"><a href="#cb1-57"></a>  <span class="dt">modelName =</span> <span class="st">'rForest.Rdata'</span>,</span>
+<span id="cb1-58"><a href="#cb1-58"></a>  <span class="dt">overlayExists =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb1-59"><a href="#cb1-59"></a>  <span class="dt">nCores =</span> parallel<span class="op">::</span><span class="kw">detectCores</span>() <span class="op">-</span><span class="st"> </span><span class="dv">1</span>,</span>
+<span id="cb1-60"><a href="#cb1-60"></a>  <span class="dt">mtryGrd =</span> <span class="dv">1</span><span class="op">:</span><span class="dv">2</span>, </span>
+<span id="cb1-61"><a href="#cb1-61"></a>  <span class="dt">ntreeGrd=</span><span class="kw">seq</span>(<span class="dv">80</span>, <span class="dv">150</span>, <span class="dt">by=</span><span class="dv">10</span>),</span>
+<span id="cb1-62"><a href="#cb1-62"></a>  <span class="dt">nfolds =</span> <span class="dv">3</span>, </span>
+<span id="cb1-63"><a href="#cb1-63"></a>  <span class="dt">nodesize =</span> <span class="dv">3</span>, </span>
+<span id="cb1-64"><a href="#cb1-64"></a>  <span class="dt">cvrepeats =</span> <span class="dv">2</span>)</span>
+<span id="cb1-65"><a href="#cb1-65"></a></span>
+<span id="cb1-66"><a href="#cb1-66"></a><span class="co"># check model performance</span></span>
+<span id="cb1-67"><a href="#cb1-67"></a><span class="kw">load</span>(<span class="kw">file.path</span>(paths<span class="op">$</span>gis,<span class="st">"rForest.Rdata"</span>))</span>
+<span id="cb1-68"><a href="#cb1-68"></a>caret<span class="op">::</span><span class="kw">confusionMatrix</span>(<span class="dt">data =</span> model<span class="op">$</span>finalModel<span class="op">$</span>predicted, </span>
+<span id="cb1-69"><a href="#cb1-69"></a>                       <span class="dt">reference =</span> model<span class="op">$</span>trainingData<span class="op">$</span>.outcome, </span>
+<span id="cb1-70"><a href="#cb1-70"></a>                       <span class="dt">mode =</span> <span class="st">'prec_recall'</span>)</span>
+<span id="cb1-71"><a href="#cb1-71"></a>                       </span>
+<span id="cb1-72"><a href="#cb1-72"></a><span class="co"># classify image for roofs and streets</span></span>
+<span id="cb1-73"><a href="#cb1-73"></a>kwb.ml<span class="op">::</span><span class="kw">predictSurfClass</span>(<span class="dt">rawdir =</span> paths<span class="op">$</span>gis,</span>
+<span id="cb1-74"><a href="#cb1-74"></a>                                    <span class="dt">modelName =</span> <span class="st">'rForest.Rdata'</span>,</span>
+<span id="cb1-75"><a href="#cb1-75"></a>                                    <span class="dt">image =</span> <span class="st">'input_image.img'</span>,</span>
+<span id="cb1-76"><a href="#cb1-76"></a>                                    <span class="dt">predName =</span> <span class="st">'classified_image.img'</span>)</span>
+<span id="cb1-77"><a href="#cb1-77"></a></span>
+<span id="cb1-78"><a href="#cb1-78"></a><span class="co"># make overlay object (list where each element is a vector of the pixel values </span></span>
+<span id="cb1-79"><a href="#cb1-79"></a><span class="co"># of the classified image for each subcatchment)</span></span>
+<span id="cb1-80"><a href="#cb1-80"></a>urbanAnnualRunoff<span class="op">::</span><span class="kw">makeOverlay</span>(<span class="dt">rawdir =</span> paths<span class="op">$</span>gis,</span>
+<span id="cb1-81"><a href="#cb1-81"></a>                               <span class="dt">rasterData =</span> <span class="st">'classified_image.img'</span>,</span>
+<span id="cb1-82"><a href="#cb1-82"></a>                               <span class="dt">subcatchmSPobject =</span> abimo,</span>
+<span id="cb1-83"><a href="#cb1-83"></a>                               <span class="dt">overlayName =</span> <span class="st">'surfType'</span>)</span>
+<span id="cb1-84"><a href="#cb1-84"></a><span class="co"># make ABIMO variable FLGES</span></span>
+<span id="cb1-85"><a href="#cb1-85"></a>abimo<span class="op">@</span>data<span class="op">$</span>FLGES &lt;-<span class="st"> </span>urbanAnnualRunoff<span class="op">::</span><span class="kw">makeFLGES</span>(<span class="dt">subcatchmSPobject =</span> abimo)</span>
+<span id="cb1-86"><a href="#cb1-86"></a></span>
+<span id="cb1-87"><a href="#cb1-87"></a><span class="co"># compute ABIMO variable PROBAU (%roof)</span></span>
+<span id="cb1-88"><a href="#cb1-88"></a>abimo<span class="op">@</span>data<span class="op">$</span>PROBAU &lt;-<span class="st"> </span>urbanAnnualRunoff<span class="op">::</span><span class="kw">makePROBAU</span>(</span>
+<span id="cb1-89"><a href="#cb1-89"></a>  <span class="dt">rawdir =</span> paths<span class="op">$</span>gis,</span>
+<span id="cb1-90"><a href="#cb1-90"></a>  <span class="dt">rasterData =</span> <span class="st">'classified_image.img'</span>,</span>
+<span id="cb1-91"><a href="#cb1-91"></a>  <span class="dt">overlayName =</span> <span class="st">'surfType'</span>,</span>
+<span id="cb1-92"><a href="#cb1-92"></a>  <span class="dt">targetValue =</span> <span class="dv">1</span>)</span>
+<span id="cb1-93"><a href="#cb1-93"></a>  </span>
+<span id="cb1-94"><a href="#cb1-94"></a><span class="co"># compute ABIMO variable STR_FLGES (m2 street area)</span></span>
+<span id="cb1-95"><a href="#cb1-95"></a>abimo<span class="op">@</span>data<span class="op">$</span>STR_FLGES &lt;-<span class="st"> </span>urbanAnnualRunoff<span class="op">::</span><span class="kw">makeSTR_FLGES</span>(</span>
+<span id="cb1-96"><a href="#cb1-96"></a>  <span class="dt">rawdir =</span> paths<span class="op">$</span>gis,</span>
+<span id="cb1-97"><a href="#cb1-97"></a>  <span class="dt">subcatchmSPobject =</span> abimo,</span>
+<span id="cb1-98"><a href="#cb1-98"></a>  <span class="dt">mask =</span> <span class="st">'input_maskUrbanCore.shp'</span>,</span>
+<span id="cb1-99"><a href="#cb1-99"></a>  <span class="dt">rasterData =</span> <span class="st">'classified_image.img'</span>,</span>
+<span id="cb1-100"><a href="#cb1-100"></a>  <span class="dt">overlayName =</span> <span class="st">'surfType'</span>,</span>
+<span id="cb1-101"><a href="#cb1-101"></a>  <span class="dt">targetValue =</span> <span class="dv">2</span>)</span>
+<span id="cb1-102"><a href="#cb1-102"></a></span>
+<span id="cb1-103"><a href="#cb1-103"></a><span class="co"># compute ABIMO variable VG (% soil sealing)</span></span>
+<span id="cb1-104"><a href="#cb1-104"></a>abimo<span class="op">@</span>data<span class="op">$</span>VG &lt;-<span class="st"> </span>urbanAnnualRunoff<span class="op">::</span><span class="kw">makeVG</span>(</span>
+<span id="cb1-105"><a href="#cb1-105"></a>  <span class="dt">rawdir =</span> paths<span class="op">$</span>gis,</span>
+<span id="cb1-106"><a href="#cb1-106"></a>  <span class="dt">subcatchmSPobject =</span> abimo,</span>
+<span id="cb1-107"><a href="#cb1-107"></a>  <span class="dt">rasterData =</span> <span class="st">'input_impervious.tif'</span>,</span>
+<span id="cb1-108"><a href="#cb1-108"></a>  <span class="dt">targetValue =</span> <span class="dv">80</span>)</span>
+<span id="cb1-109"><a href="#cb1-109"></a></span>
+<span id="cb1-110"><a href="#cb1-110"></a><span class="co"># compute annual and summer rainfall. </span></span>
+<span id="cb1-111"><a href="#cb1-111"></a><span class="co"># *** potential enhancement: ***</span></span>
+<span id="cb1-112"><a href="#cb1-112"></a><span class="co"># return the multiannual average annual rainfall. care must be taken to exclude</span></span>
+<span id="cb1-113"><a href="#cb1-113"></a><span class="co"># incomplete years from the average calculation. same for summer rainfall</span></span>
+<span id="cb1-114"><a href="#cb1-114"></a>precipitation &lt;-<span class="st"> </span>urbanAnnualRunoff<span class="op">::</span><span class="kw">computeABIMOclimate</span>(</span>
+<span id="cb1-115"><a href="#cb1-115"></a>  <span class="dt">rawdir =</span> paths<span class="op">$</span>climate,</span>
+<span id="cb1-116"><a href="#cb1-116"></a>  <span class="dt">file_inp =</span> <span class="kw">sprintf</span>(<span class="st">'raw_climateeng_precipitation_daily_%s.txt'</span>, </span>
+<span id="cb1-117"><a href="#cb1-117"></a>                     paths<span class="op">$</span>site),</span>
+<span id="cb1-118"><a href="#cb1-118"></a>  <span class="dt">file_out =</span> <span class="st">'precipitation.txt'</span>,</span>
+<span id="cb1-119"><a href="#cb1-119"></a>  <span class="dt">summer_month_start =</span> <span class="dv">4</span>)</span>
+<span id="cb1-120"><a href="#cb1-120"></a><span class="co"># compute annual and summer ETP. this goes manually into the ABIMO config file</span></span>
+<span id="cb1-121"><a href="#cb1-121"></a>  evapotranspiration &lt;-<span class="st"> </span>urbanAnnualRunoff<span class="op">::</span><span class="kw">computeABIMOclimate</span>(</span>
+<span id="cb1-122"><a href="#cb1-122"></a>  <span class="dt">rawdir =</span> paths<span class="op">$</span>climate,</span>
+<span id="cb1-123"><a href="#cb1-123"></a>  <span class="dt">file_inp =</span> <span class="kw">sprintf</span>(<span class="st">'raw_climateeng_etp_daily_%s.txt'</span>, </span>
+<span id="cb1-124"><a href="#cb1-124"></a>                     paths<span class="op">$</span>site),</span>
+<span id="cb1-125"><a href="#cb1-125"></a>  <span class="dt">file_out =</span> <span class="st">'evapotranspiration.txt'</span>,</span>
+<span id="cb1-126"><a href="#cb1-126"></a>  <span class="dt">summer_month_start =</span> <span class="dv">4</span>)</span>
+<span id="cb1-127"><a href="#cb1-127"></a>  </span>
+<span id="cb1-128"><a href="#cb1-128"></a><span class="co">### Merge complete years (i.e. 2014-2019 for Jinxi)</span></span>
+<span id="cb1-129"><a href="#cb1-129"></a><span class="co">### mean rainfall: 1744mm</span></span>
+<span id="cb1-130"><a href="#cb1-130"></a>climate_data &lt;-<span class="st"> </span>dplyr<span class="op">::</span><span class="kw">inner_join</span>(precipitation, evapotranspiration,</span>
+<span id="cb1-131"><a href="#cb1-131"></a>                                  <span class="dt">by =</span> <span class="st">"year"</span>, </span>
+<span id="cb1-132"><a href="#cb1-132"></a>                                  <span class="dt">suffix =</span> <span class="kw">c</span>(<span class="st">".p"</span>, <span class="st">".etp"</span>)) <span class="op">%&gt;%</span><span class="st">  </span></span>
+<span id="cb1-133"><a href="#cb1-133"></a><span class="st">  </span>dplyr<span class="op">::</span><span class="kw">mutate</span>(dplyr<span class="op">::</span><span class="kw">across</span>(tidyselect<span class="op">::</span><span class="kw">ends_with</span>(<span class="st">"p"</span>), round))</span>
+<span id="cb1-134"><a href="#cb1-134"></a></span>
+<span id="cb1-135"><a href="#cb1-135"></a><span class="co">#wet year 2320mm (2016)</span></span>
+<span id="cb1-136"><a href="#cb1-136"></a><span class="co">#climate_data &lt;- climate_data %&gt;%  dplyr::filter(year == "2016")</span></span>
+<span id="cb1-137"><a href="#cb1-137"></a></span>
+<span id="cb1-138"><a href="#cb1-138"></a><span class="co">#dry year 1407mm (2019)</span></span>
+<span id="cb1-139"><a href="#cb1-139"></a><span class="co">#climate_data &lt;- climate_data %&gt;%  dplyr::filter(year == "2019")</span></span>
+<span id="cb1-140"><a href="#cb1-140"></a></span>
+<span id="cb1-141"><a href="#cb1-141"></a><span class="co"># annual rainfall (this can be automatized by making 'computeABIMOclimate'</span></span>
+<span id="cb1-142"><a href="#cb1-142"></a><span class="co"># return the multiannual average annual rainfall. care must be taken to exclude</span></span>
+<span id="cb1-143"><a href="#cb1-143"></a><span class="co"># incomplete years from the average calculation)</span></span>
+<span id="cb1-144"><a href="#cb1-144"></a>round_mean &lt;-<span class="st"> </span><span class="cf">function</span>(values) {</span>
+<span id="cb1-145"><a href="#cb1-145"></a>  <span class="kw">round</span>(<span class="kw">mean</span>(values), <span class="dt">digits  =</span> <span class="dv">0</span>)</span>
+<span id="cb1-146"><a href="#cb1-146"></a>}</span>
+<span id="cb1-147"><a href="#cb1-147"></a></span>
+<span id="cb1-148"><a href="#cb1-148"></a><span class="co">### Mean precipitation value for period 2014-2019</span></span>
+<span id="cb1-149"><a href="#cb1-149"></a>abimo<span class="op">@</span>data<span class="op">$</span>REGENJA &lt;-<span class="st"> </span><span class="kw">round_mean</span>(climate_data<span class="op">$</span>sum_annual.p)</span>
+<span id="cb1-150"><a href="#cb1-150"></a>abimo<span class="op">@</span>data<span class="op">$</span>REGENSO &lt;-<span class="st"> </span><span class="kw">round_mean</span>(climate_data<span class="op">$</span>sum_summer.p)</span>
+<span id="cb1-151"><a href="#cb1-151"></a></span>
+<span id="cb1-152"><a href="#cb1-152"></a><span class="co">### Mean evapotranspiration value for period 2014-2019</span></span>
+<span id="cb1-153"><a href="#cb1-153"></a>kwb.abimo<span class="op">::</span><span class="kw">abimo_xml_evap</span>(</span>
+<span id="cb1-154"><a href="#cb1-154"></a>  <span class="dt">file_in =</span> paths<span class="op">$</span>abimo_config_original,</span>
+<span id="cb1-155"><a href="#cb1-155"></a>  <span class="dt">file_out =</span> paths<span class="op">$</span>abimo_config_modified,</span>
+<span id="cb1-156"><a href="#cb1-156"></a>  <span class="dt">evap_annual =</span> <span class="kw">round_mean</span>(climate_data<span class="op">$</span>sum_annual.etp),</span>
+<span id="cb1-157"><a href="#cb1-157"></a>  <span class="dt">evap_summer =</span> <span class="kw">round_mean</span>(climate_data<span class="op">$</span>sum_summer.etp)</span>
+<span id="cb1-158"><a href="#cb1-158"></a>)</span>
+<span id="cb1-159"><a href="#cb1-159"></a></span>
+<span id="cb1-160"><a href="#cb1-160"></a><span class="co">### Check modified ABIMO config.xml</span></span>
+<span id="cb1-161"><a href="#cb1-161"></a>kwb.utils<span class="op">::</span><span class="kw">hsOpenWindowsExplorer</span>(paths<span class="op">$</span>abimo_config_modified)</span>
+<span id="cb1-162"><a href="#cb1-162"></a></span>
+<span id="cb1-163"><a href="#cb1-163"></a><span class="co"># compute ABIMO variable PROVGU (% other impervious areas) as </span></span>
+<span id="cb1-164"><a href="#cb1-164"></a><span class="co"># PROVGU = VG - PROBAU, setting any negative values to 0. this</span></span>
+<span id="cb1-165"><a href="#cb1-165"></a><span class="co"># happens for only &lt;10% of subcatchments, and results mainly from</span></span>
+<span id="cb1-166"><a href="#cb1-166"></a><span class="co"># differences in spatial resolution and classification differences</span></span>
+<span id="cb1-167"><a href="#cb1-167"></a><span class="co"># between both datasets (our classified image and the global land </span></span>
+<span id="cb1-168"><a href="#cb1-168"></a><span class="co"># use dataset)</span></span>
+<span id="cb1-169"><a href="#cb1-169"></a>abimo<span class="op">@</span>data<span class="op">$</span>PROVGU &lt;-<span class="st"> </span><span class="kw">ifelse</span>((abimo<span class="op">@</span>data<span class="op">$</span>VG <span class="op">-</span><span class="st"> </span>abimo<span class="op">@</span>data<span class="op">$</span>PROBAU) <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>,</span>
+<span id="cb1-170"><a href="#cb1-170"></a>                            abimo<span class="op">@</span>data<span class="op">$</span>VG <span class="op">-</span><span class="st"> </span>abimo<span class="op">@</span>data<span class="op">$</span>PROBAU,</span>
+<span id="cb1-171"><a href="#cb1-171"></a>                            <span class="dv">0</span>)</span>
+<span id="cb1-172"><a href="#cb1-172"></a></span>
+<span id="cb1-173"><a href="#cb1-173"></a><span class="co"># % imperviousness streets</span></span>
+<span id="cb1-174"><a href="#cb1-174"></a>abimo<span class="op">@</span>data<span class="op">$</span>VGSTRASSE &lt;-<span class="st"> </span><span class="dv">100</span></span>
+<span id="cb1-175"><a href="#cb1-175"></a></span>
+<span id="cb1-176"><a href="#cb1-176"></a><span class="co"># %cover types in other imperv. areas (PROVGU)</span></span>
+<span id="cb1-177"><a href="#cb1-177"></a>abimo<span class="op">@</span>data<span class="op">$</span>BELAG1 &lt;-<span class="st"> </span><span class="dv">100</span></span>
+<span id="cb1-178"><a href="#cb1-178"></a>abimo<span class="op">@</span>data<span class="op">$</span>BELAG2 &lt;-<span class="st"> </span><span class="dv">0</span></span>
+<span id="cb1-179"><a href="#cb1-179"></a>abimo<span class="op">@</span>data<span class="op">$</span>BELAG3 &lt;-<span class="st"> </span><span class="dv">0</span></span>
+<span id="cb1-180"><a href="#cb1-180"></a>abimo<span class="op">@</span>data<span class="op">$</span>BELAG4 &lt;-<span class="st"> </span><span class="dv">0</span></span>
+<span id="cb1-181"><a href="#cb1-181"></a></span>
+<span id="cb1-182"><a href="#cb1-182"></a><span class="co"># %cover types in street areas</span></span>
+<span id="cb1-183"><a href="#cb1-183"></a>abimo<span class="op">@</span>data<span class="op">$</span>STR_BELAG1 &lt;-<span class="st"> </span><span class="dv">100</span></span>
+<span id="cb1-184"><a href="#cb1-184"></a>abimo<span class="op">@</span>data<span class="op">$</span>STR_BELAG2 &lt;-<span class="st"> </span><span class="dv">0</span></span>
+<span id="cb1-185"><a href="#cb1-185"></a>abimo<span class="op">@</span>data<span class="op">$</span>STR_BELAG3 &lt;-<span class="st"> </span><span class="dv">0</span></span>
+<span id="cb1-186"><a href="#cb1-186"></a>abimo<span class="op">@</span>data<span class="op">$</span>STR_BELAG4 &lt;-<span class="st"> </span><span class="dv">0</span></span>
+<span id="cb1-187"><a href="#cb1-187"></a></span>
+<span id="cb1-188"><a href="#cb1-188"></a><span class="co"># identifiers</span></span>
+<span id="cb1-189"><a href="#cb1-189"></a>abimo<span class="op">@</span>data<span class="op">$</span>BEZIRK &lt;-<span class="st"> </span><span class="dv">1</span></span>
+<span id="cb1-190"><a href="#cb1-190"></a>abimo<span class="op">@</span>data<span class="op">$</span>STAGEB &lt;-<span class="st"> </span><span class="dv">1</span></span>
+<span id="cb1-191"><a href="#cb1-191"></a>abimo<span class="op">@</span>data<span class="op">$</span>BLOCK &lt;-<span class="st"> </span><span class="dv">1</span></span>
+<span id="cb1-192"><a href="#cb1-192"></a>abimo<span class="op">@</span>data<span class="op">$</span>TEILBLOCK &lt;-<span class="st"> </span><span class="dv">1</span></span>
+<span id="cb1-193"><a href="#cb1-193"></a>abimo<span class="op">@</span>data<span class="op">$</span>NUTZUNG &lt;-<span class="st"> </span><span class="dv">21</span></span>
+<span id="cb1-194"><a href="#cb1-194"></a>abimo<span class="op">@</span>data<span class="op">$</span>TYP &lt;-<span class="st"> </span><span class="dv">21</span></span>
+<span id="cb1-195"><a href="#cb1-195"></a></span>
+<span id="cb1-196"><a href="#cb1-196"></a></span>
+<span id="cb1-197"><a href="#cb1-197"></a><span class="co"># channelization degrees. these are set manually since there is no data</span></span>
+<span id="cb1-198"><a href="#cb1-198"></a>abimo<span class="op">@</span>data<span class="op">$</span>KANAL &lt;-<span class="st"> </span><span class="dv">1</span></span>
+<span id="cb1-199"><a href="#cb1-199"></a>abimo<span class="op">@</span>data<span class="op">$</span>KAN_BEB &lt;-<span class="st"> </span><span class="dv">100</span></span>
+<span id="cb1-200"><a href="#cb1-200"></a>abimo<span class="op">@</span>data<span class="op">$</span>KAN_VGU &lt;-<span class="st"> </span><span class="dv">100</span></span>
+<span id="cb1-201"><a href="#cb1-201"></a>abimo<span class="op">@</span>data<span class="op">$</span>KAN_STR &lt;-<span class="st"> </span><span class="dv">100</span></span>
+<span id="cb1-202"><a href="#cb1-202"></a></span>
+<span id="cb1-203"><a href="#cb1-203"></a><span class="co"># soil field capacity and groundwater level (personal communication, Dr. Lipin Li, </span></span>
+<span id="cb1-204"><a href="#cb1-204"></a><span class="co"># Harbin Inst. of Technology)</span></span>
+<span id="cb1-205"><a href="#cb1-205"></a>abimo<span class="op">@</span>data<span class="op">$</span>FELD_<span class="dv">30</span> &lt;-<span class="st"> </span><span class="dv">30</span></span>
+<span id="cb1-206"><a href="#cb1-206"></a>abimo<span class="op">@</span>data<span class="op">$</span>FELD_<span class="dv">150</span> &lt;-<span class="st"> </span><span class="dv">30</span></span>
+<span id="cb1-207"><a href="#cb1-207"></a>abimo<span class="op">@</span>data<span class="op">$</span>FLUR &lt;-<span class="st"> </span><span class="fl">1.17</span></span>
+<span id="cb1-208"><a href="#cb1-208"></a></span>
+<span id="cb1-209"><a href="#cb1-209"></a><span class="co"># select required columns and write out new shapefile</span></span>
+<span id="cb1-210"><a href="#cb1-210"></a></span>
+<span id="cb1-211"><a href="#cb1-211"></a><span class="co"># select required columns and write out new shapefile</span></span>
+<span id="cb1-212"><a href="#cb1-212"></a>requiredCols &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'CODE'</span>, <span class="st">'BEZIRK'</span>, <span class="st">'STAGEB'</span>, <span class="st">'BLOCK'</span>, </span>
+<span id="cb1-213"><a href="#cb1-213"></a>                  <span class="st">'TEILBLOCK'</span>, <span class="st">'NUTZUNG'</span>, <span class="st">'TYP'</span>, <span class="st">'FLGES'</span>, </span>
+<span id="cb1-214"><a href="#cb1-214"></a>                  <span class="st">'STR_FLGES'</span>, <span class="st">'PROBAU'</span>, <span class="st">'PROVGU'</span>, <span class="st">'VGSTRASSE'</span>,</span>
+<span id="cb1-215"><a href="#cb1-215"></a>                  <span class="st">'BELAG1'</span>, <span class="st">'BELAG2'</span>, <span class="st">'BELAG3'</span>, <span class="st">'BELAG4'</span>,</span>
+<span id="cb1-216"><a href="#cb1-216"></a>                  <span class="st">'STR_BELAG1'</span>, <span class="st">'STR_BELAG2'</span>, <span class="st">'STR_BELAG3'</span>, <span class="st">'STR_BELAG4'</span>,</span>
+<span id="cb1-217"><a href="#cb1-217"></a>                  <span class="st">'KAN_BEB'</span>, <span class="st">'KAN_VGU'</span>, <span class="st">'KAN_STR'</span>,</span>
+<span id="cb1-218"><a href="#cb1-218"></a>                  <span class="st">'REGENJA'</span>, <span class="st">'REGENSO'</span>,</span>
+<span id="cb1-219"><a href="#cb1-219"></a>                  <span class="st">'FELD_30'</span>, <span class="st">'FELD_150'</span>, <span class="st">'FLUR'</span>)</span>
+<span id="cb1-220"><a href="#cb1-220"></a>abimo<span class="op">@</span>data &lt;-<span class="st"> </span>kwb.utils<span class="op">::</span><span class="kw">selectColumns</span>(abimo<span class="op">@</span>data, </span>
+<span id="cb1-221"><a href="#cb1-221"></a>                                       <span class="dt">columns =</span> requiredCols)</span>
+<span id="cb1-222"><a href="#cb1-222"></a></span>
+<span id="cb1-223"><a href="#cb1-223"></a><span class="co"># format numbers to 0 decimal places (avoid 'pseudo-accuracy')</span></span>
+<span id="cb1-224"><a href="#cb1-224"></a><span class="co">#abimo@data[, 8:ncol(abimo@data)] &lt;- round(</span></span>
+<span id="cb1-225"><a href="#cb1-225"></a><span class="co">#  abimo@data[, 8:ncol(abimo@data)],</span></span>
+<span id="cb1-226"><a href="#cb1-226"></a><span class="co">#  digits = 0)</span></span>
+<span id="cb1-227"><a href="#cb1-227"></a></span>
+<span id="cb1-228"><a href="#cb1-228"></a><span class="co"># change decimal separator to comma</span></span>
+<span id="cb1-229"><a href="#cb1-229"></a><span class="co"># (ABIMO does not run correctly otherwise) </span></span>
+<span id="cb1-230"><a href="#cb1-230"></a>abimo<span class="op">@</span>data &lt;-<span class="st"> </span><span class="kw">as.data.frame</span>(<span class="kw">apply</span>(<span class="dt">X=</span><span class="kw">apply</span>(<span class="dt">X=</span>abimo<span class="op">@</span>data,</span>
+<span id="cb1-231"><a href="#cb1-231"></a>                                         <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">2</span>),</span>
+<span id="cb1-232"><a href="#cb1-232"></a>                                         <span class="dt">FUN=</span>as.character),</span>
+<span id="cb1-233"><a href="#cb1-233"></a>                                 <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">2</span>),</span>
+<span id="cb1-234"><a href="#cb1-234"></a>                                 <span class="dt">FUN=</span>gsub,</span>
+<span id="cb1-235"><a href="#cb1-235"></a>                                 <span class="dt">pattern=</span><span class="st">"</span><span class="ch">\\</span><span class="st">."</span>,</span>
+<span id="cb1-236"><a href="#cb1-236"></a>                                 <span class="dt">replacement=</span><span class="st">","</span>),</span>
+<span id="cb1-237"><a href="#cb1-237"></a>                           <span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>)</span>
+<span id="cb1-238"><a href="#cb1-238"></a></span>
+<span id="cb1-239"><a href="#cb1-239"></a></span>
+<span id="cb1-240"><a href="#cb1-240"></a></span>
+<span id="cb1-241"><a href="#cb1-241"></a></span>
+<span id="cb1-242"><a href="#cb1-242"></a><span class="co"># write ABIMO input table</span></span>
+<span id="cb1-243"><a href="#cb1-243"></a>raster<span class="op">::</span><span class="kw">shapefile</span>(<span class="dt">x=</span>abimo, </span>
+<span id="cb1-244"><a href="#cb1-244"></a>                  <span class="dt">filename=</span>paths<span class="op">$</span>abimo_inp_shp,</span>
+<span id="cb1-245"><a href="#cb1-245"></a>                  <span class="dt">overwrite=</span><span class="ot">TRUE</span>)</span>
+<span id="cb1-246"><a href="#cb1-246"></a></span>
+<span id="cb1-247"><a href="#cb1-247"></a></span>
+<span id="cb1-248"><a href="#cb1-248"></a>kwb.abimo<span class="op">::</span><span class="kw">write.dbf.abimo</span>(abimo, </span>
+<span id="cb1-249"><a href="#cb1-249"></a>                           <span class="dt">new_dbf =</span> paths<span class="op">$</span>abimo_inp_dbf)</span>
+<span id="cb1-250"><a href="#cb1-250"></a></span>
+<span id="cb1-251"><a href="#cb1-251"></a></span>
+<span id="cb1-252"><a href="#cb1-252"></a><span class="co"># run ABIMO manually in GUI ----------------------------------------------------</span></span>
+<span id="cb1-253"><a href="#cb1-253"></a>abimo_out &lt;-<span class="st"> </span><span class="kw">sprintf</span>(<span class="st">'abimo_%sout.dbf'</span>, paths<span class="op">$</span>site)</span>
+<span id="cb1-254"><a href="#cb1-254"></a><span class="cf">if</span>(<span class="op">!</span>fs<span class="op">::</span><span class="kw">file_exists</span>(paths<span class="op">$</span>abimo_exe)) {</span>
+<span id="cb1-255"><a href="#cb1-255"></a>  <span class="kw">stop</span>(<span class="kw">cat</span>(<span class="kw">sprintf</span>(<span class="st">"ABIMO executale does not exist: %s</span></span>
+<span id="cb1-256"><a href="#cb1-256"></a><span class="st">Please copy to this location"</span>, paths<span class="op">$</span>abimo_exe)))</span>
+<span id="cb1-257"><a href="#cb1-257"></a>} <span class="cf">else</span> {</span>
+<span id="cb1-258"><a href="#cb1-258"></a><span class="kw">message</span>(<span class="kw">cat</span>(<span class="kw">sprintf</span>(<span class="st">"Run ABIMO executable manually:</span></span>
+<span id="cb1-259"><a href="#cb1-259"></a><span class="st">1. Select input file: </span><span class="ch">\"</span><span class="st">%s</span><span class="ch">\"</span></span>
+<span id="cb1-260"><a href="#cb1-260"></a><span class="st">2. Save it under: </span><span class="ch">\"</span><span class="st">%s</span><span class="ch">\"</span><span class="st">"</span>, </span>
+<span id="cb1-261"><a href="#cb1-261"></a>                    abimo_inp_path, </span>
+<span id="cb1-262"><a href="#cb1-262"></a>                    abimo_out))</span>
+<span id="cb1-263"><a href="#cb1-263"></a>)</span>
+<span id="cb1-264"><a href="#cb1-264"></a>      </span>
+<span id="cb1-265"><a href="#cb1-265"></a>kwb.utils<span class="op">::</span><span class="kw">hsOpenWindowsExplorer</span>(paths<span class="op">$</span>abimo_exe)</span>
+<span id="cb1-266"><a href="#cb1-266"></a></span>
+<span id="cb1-267"><a href="#cb1-267"></a><span class="co"># postprocessing ----------------------------------------------------------------</span></span>
+<span id="cb1-268"><a href="#cb1-268"></a><span class="co"># post-process ABIMO output file -&gt; join it with input shape file for </span></span>
+<span id="cb1-269"><a href="#cb1-269"></a><span class="co"># visualization in GIS</span></span>
+<span id="cb1-270"><a href="#cb1-270"></a></span>
+<span id="cb1-271"><a href="#cb1-271"></a>scenario_results_jinxi &lt;-<span class="st"> </span>urbanAnnualRunoff<span class="op">::</span><span class="kw">get_scenario_results</span>(paths)</span>
+<span id="cb1-272"><a href="#cb1-272"></a></span>
+<span id="cb1-273"><a href="#cb1-273"></a><span class="co">#usethis::use_data(scenario_results_jinxi, overwrite = TRUE)</span></span></code></pre></div>
+<div id="scenario-results" class="section level2">
+<h2 class="hasAnchor">
+<a href="#scenario-results" class="anchor"></a>Scenario Results</h2>
+<p>Below is a summary table with the ABIMO water balance modelling results for the different <code>de-coupling</code> scenarios. Combining (<code>combi_xxx</code>) the different single measures, i.e. <code>bioretention cells</code> (for streets), <code>green roofs</code> (for sealed areas with buildings), and <code>permeable pavements</code> (for sealed areas without buildings/streets)) enables to satisfy the <code>VRR</code> (volume rainfall retended) goal defined for climate zone 4, i.e <code>0.70 &gt;= VRR &lt;= 0.85</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/KWB-R/urbanAnnualRunoff">urbanAnnualRunoff</a></span><span class="op">)</span>
+<span class="fu">DT</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/DT/man/datatable.html">datatable</a></span><span class="op">(</span><span class="fu">urbanAnnualRunoff</span><span class="fu">::</span><span class="va"><a href="../reference/scenario_results_jinxi.html">scenario_results_jinxi</a></span> <span class="op">%&gt;%</span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span><span class="op">(</span><span class="op">!</span><span class="fu">tidyselect</span><span class="fu">::</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/all_of.html">all_of</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"abimo_inpout"</span>, <span class="st">"abimo_inpout_emissions"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<div id="htmlwidget-1ec19a34ed2bdb5013f9" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1ec19a34ed2bdb5013f9">{"x":{"filter":"none","vertical":false,"data":[["1","2","3"],["2015-2019_default-dummy_connection-060percent","2015-2019_default-dummy_connection-080percent","2015-2019_default-dummy_connection-100percent"],[16,16,16],[27896009,27896009,27896009],[8189855,10919806,13649757],[14908461,12178510,9448558],[4797695,4797695,4797695],[0.706,0.609,0.511],[158040.455830007,210720.586175469,263400.725904898],[1024002.4831687,1365336.50428433,1706670.58620215],[1192056.35521509,1589408.3107132,1986760.33699204],[449.18344911706,598.911204103816,748.638985761737],[4.42099222500499,5.89465569583202,7.36831942916429],[82.944567162242,110.592744881084,138.240927524924],[1752.78498228768,2337.04640351392,2921.30792881526],[61.0491066084458,81.3988004682647,101.748497952996],[529.558013746426,706.077279292283,882.596576281704],[52.5963789735493,70.1284981102227,87.6606203699112],[6476.16214007175,8634.88196839399,10793.6021812513]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>scenario_name<\/th>\n      <th>catchment_km2<\/th>\n      <th>rainfall_cbm<\/th>\n      <th>runoff_cbm<\/th>\n      <th>infiltration_cbm<\/th>\n      <th>evapotrans_cbm<\/th>\n      <th>vrr<\/th>\n      <th>BOD.kg_yr<\/th>\n      <th>COD.kg_yr<\/th>\n      <th>TSS.kg_yr<\/th>\n      <th>Pb.kg_yr<\/th>\n      <th>Cd.kg_yr<\/th>\n      <th>Cr.kg_yr<\/th>\n      <th>Cu.kg_yr<\/th>\n      <th>Ni.kg_yr<\/th>\n      <th>Ti.kg_yr<\/th>\n      <th>Va.kg_yr<\/th>\n      <th>Zn.kg_yr<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+</div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-      </div>
+        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
+    </nav>
+</div>
 
 </div>
 
