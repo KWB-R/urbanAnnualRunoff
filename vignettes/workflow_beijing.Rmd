@@ -356,7 +356,7 @@ kwb.utils::hsOpenWindowsExplorer(dirname(paths$abimo_exe))
 # post-process ABIMO output file -> join it with input shape file for 
 # visualization in GIS
 
-scenario_results_beijing <- get_scenario_results(paths)
+scenario_results_beijing <- urbanAnnualRunoff::get_scenario_results(paths)
 
 #usethis::use_data(scenario_results_beijing, overwrite = TRUE)
 

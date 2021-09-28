@@ -1,8 +1,8 @@
-#' Results of ABIMO Scenario Analysis For Beijing
+#' Results of ABIMO Scenario Analysis For Jinxi
 #'
-#' A dataset for ABIMO modelling results for Beijing case study
+#' A dataset for ABIMO modelling results for Jinxi case study
 #'
-#' @format A data.frame with 21 rows and 20 variables:
+#' @format A data.frame with 3 rows and 20 variables:
 #' \describe{
 #'   \item{scenario_name}{name of scenario}
 #'   \item{catchment_km2}{sum of FLGES ans STR_FLGES (in square kilometers)}
@@ -26,4 +26,4 @@
 #'
 
 #' }
-"scenario_results_beijing"
+"scenario_results_jinxi"

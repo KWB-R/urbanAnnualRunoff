@@ -36,6 +36,7 @@ Imports:
     rgdal,
     remotes,
     stringr,
+    tibble,
     tidyselect
 Suggests: 
     caret, 

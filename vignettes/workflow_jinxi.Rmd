@@ -29,13 +29,19 @@ Workflow in RStudio:
 7. Restart R Studio"
 )
 } else {
-
-
+  
 path_list <- list(
   root_path = "C:/kwb/projects/keys/Data-Work packages",
   site = "Jinxi",
   data = "WP2_SUW_pollution_<site>",
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
+  abimo_inp_shp = "<abimo>/abimo_<site>.shp",
+  abimo_inp_dbf = "<abimo>/abimo_<site>.dbf",
+  abimo_out = "abimo_<site>out.dbf",
+  abimo_berlin = "<abimo>/abimo_2019_mitstrassen.dbf",
+  abimo_scenarios = "<abimo>/scenarios/de-coupling",
+  abimo_config_original = "<abimo>/config_original.xml",
+  abimo_config_modified = "<abimo>/config.xml",
   abimo_exe = "<abimo>/Abimo3_2.exe",
   gis = "<root_path>/<data>/_DataAnalysis/gis",
   climate = "<root_path>/<data>/_DataAnalysis/climate",
@@ -88,7 +94,7 @@ kwb.ml::predictSurfClass(rawdir = paths$gis,
 
 # make overlay object (list where each element is a vector of the pixel values 
 # of the classified image for each subcatchment)
-kwb.ml::makeOverlay(rawdir = paths$gis,
+urbanAnnualRunoff::makeOverlay(rawdir = paths$gis,
                                rasterData = 'classified_image.img',
                                subcatchmSPobject = abimo,
                                overlayName = 'surfType')
@@ -124,23 +130,52 @@ abimo@data$VG <- urbanAnnualRunoff::makeVG(
 # incomplete years from the average calculation. same for summer rainfall
 precipitation <- urbanAnnualRunoff::computeABIMOclimate(
   rawdir = paths$climate,
-  fileName = sprintf('raw_climateeng_precipitation_daily_%s.txt', 
+  file_inp = sprintf('raw_climateeng_precipitation_daily_%s.txt', 
                      paths$site),
-  skip = 6, sep = '', dec = '.',
-  outAnnual = 'precipitation_annual.txt',
-  outSummer ='precipitation_summer.txt')
+  file_out = 'precipitation.txt',
+  summer_month_start = 4)
 # compute annual and summer ETP. this goes manually into the ABIMO config file
-  evapotranspiration <- urbanAnnualRunoff::computeABIMOclimate(rawdir = paths$climate,
-                    fileName = sprintf('raw_climateeng_etp_daily_%s.txt', 
-                                       paths$site),
-                    skip = 6, sep = '', dec = '.',
-                    outAnnual = 'etp_annual.txt',
-                    outSummer = 'etp_summer.txt')
+  evapotranspiration <- urbanAnnualRunoff::computeABIMOclimate(
+  rawdir = paths$climate,
+  file_inp = sprintf('raw_climateeng_etp_daily_%s.txt', 
+                     paths$site),
+  file_out = 'evapotranspiration.txt',
+  summer_month_start = 4)
+  
+### Merge complete years (i.e. 2014-2019 for Jinxi)
+### mean rainfall: 1744mm
+climate_data <- dplyr::inner_join(precipitation, evapotranspiration,
+                                  by = "year", 
+                                  suffix = c(".p", ".etp")) %>%  
+  dplyr::mutate(dplyr::across(tidyselect::ends_with("p"), round))
 
-# use raw code to compute and assign remaining ABIMO variables manually
-# raw code ------------------------------------------------------------------------------
+#wet year 2320mm (2016)
+#climate_data <- climate_data %>%  dplyr::filter(year == "2016")
 
-# raw code ------------------------------------------------------------------------------
+#dry year 1407mm (2019)
+#climate_data <- climate_data %>%  dplyr::filter(year == "2019")
+
+# annual rainfall (this can be automatized by making 'computeABIMOclimate'
+# return the multiannual average annual rainfall. care must be taken to exclude
+# incomplete years from the average calculation)
+round_mean <- function(values) {
+  round(mean(values), digits  = 0)
+}
+
+### Mean precipitation value for period 2014-2019
+abimo@data$REGENJA <- round_mean(climate_data$sum_annual.p)
+abimo@data$REGENSO <- round_mean(climate_data$sum_summer.p)
+
+### Mean evapotranspiration value for period 2014-2019
+kwb.abimo::abimo_xml_evap(
+  file_in = paths$abimo_config_original,
+  file_out = paths$abimo_config_modified,
+  evap_annual = round_mean(climate_data$sum_annual.etp),
+  evap_summer = round_mean(climate_data$sum_summer.etp)
+)
+
+### Check modified ABIMO config.xml
+kwb.utils::hsOpenWindowsExplorer(paths$abimo_config_modified)
 
 # compute ABIMO variable PROVGU (% other impervious areas) as 
 # PROVGU = VG - PROBAU, setting any negative values to 0. this
@@ -176,76 +211,11 @@ abimo@data$NUTZUNG <- 21
 abimo@data$TYP <- 21
 
 
-# annual rainfall (this can be automatized by making 'computeABIMOclimate'
-# return the multiannual average annual rainfall. care must be taken to exclude
-# incomplete years from the average calculation)
-
-# manually averaged annual rainfall and summer rainfall
-abimo@data$REGENJA <- 1744 # averaged manually
-abimo@data$REGENSO <- 1258 # averaged manually
-  
-# better version using dplyr
-#year_min <- 2015
-#year_max <- 2019
-#abimo@data$REGENJA <- precipitation$total %>% 
-#  dplyr::filter(.data$year >= year_min & .data$year <= year_max) %>% 
-#  dplyr::summarise(value_mean = mean(.data$value)) %>% 
-#  dplyr::pull()
-#abimo@data$REGENSO <- precipitation$summer %>% 
-#  dplyr::filter(.data$year >= year_min & .data$year <= year_max) %>% 
-#  dplyr::summarise(value_mean = mean(.data$value)) %>%  
-#  dplyr::pull()
-
-### calculate mean evapotranspiration (total, summer) to be defined as input 
-### in ABIMO "config.xml" file
-# ept_mean <- tibble::tibble(total = evapotranspiration$total %>% 
-#   dplyr::filter(.data$year >= year_min & .data$year <= year_max) %>% 
-#   dplyr::summarise(value_mean = mean(value)) %>% 
-#   as.numeric(), 
-#   summer = evapotranspiration$summer %>% 
-#   dplyr::filter(.data$year >= year_min & .data$year <= year_max) %>% 
-#   dplyr::summarise(value_mean = mean(.data$value)) %>% 
-#   as.numeric())
-#   
-#   
-# abimo_config <- file.path(paths$abimo, "config.xml")
-# 
-# message(sprintf("Manually set values in ABIMO config file:
-# '%s'
-# 
-# In '<section name=\"PotentielleVerdunstung\">\"' 
-# 
-# Enter the following values for for 'BEZIRK = 1' and also default 'BEZIRK = 0'
-# etp: %4.0f
-# etps: %4.1f",
-#                 abimo_config,
-#                 ept_mean$total, 
-#                 ept_mean$summer))
-# ### open ABIMO config for manual data input
-# kwb.utils::hsOpenWindowsExplorer(abimo_config)
-
-  
-#abimo_config <- file.path(paths$abimo, "config.xml")
-
-#message(sprintf("Manually set values in ABIMO config file:
-'%s'
-
-#In '<section name=\"PotentielleVerdunstung\">\"' 
-
-#Enter the following values for for 'BEZIRK = 1' and also default 'BEZIRK = 0'
-#etp: %4.0f
-#etps: %4.1f",
-#                abimo_config,
-#                ept_mean$total, 
-#                ept_mean$summer))
-### open ABIMO config for manual data input
-#kwb.utils::hsOpenWindowsExplorer(abimo_config)
-
 # channelization degrees. these are set manually since there is no data
-abimo@data$KANAL<- 1
-abimo@data$KAN_BEB<- 100
-abimo@data$KAN_VGU<- 100
-abimo@data$KAN_STR<- 100
+abimo@data$KANAL <- 1
+abimo@data$KAN_BEB <- 100
+abimo@data$KAN_VGU <- 100
+abimo@data$KAN_STR <- 100
 
 # soil field capacity and groundwater level (personal communication, Dr. Lipin Li, 
 # Harbin Inst. of Technology)
@@ -254,23 +224,26 @@ abimo@data$FELD_150 <- 30
 abimo@data$FLUR <- 1.17
 
 # select required columns and write out new shapefile
-requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 'TEILBLOCK',
-                  'NUTZUNG', 'TYP',
-                  'FLGES', 'STR_FLGES',
-                  'PROBAU', 'PROVGU', 'VGSTRASSE',
+
+# select required columns and write out new shapefile
+requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 
+                  'TEILBLOCK', 'NUTZUNG', 'TYP', 'FLGES', 
+                  'STR_FLGES', 'PROBAU', 'PROVGU', 'VGSTRASSE',
                   'BELAG1', 'BELAG2', 'BELAG3', 'BELAG4',
                   'STR_BELAG1', 'STR_BELAG2', 'STR_BELAG3', 'STR_BELAG4',
                   'KAN_BEB', 'KAN_VGU', 'KAN_STR',
                   'REGENJA', 'REGENSO',
                   'FELD_30', 'FELD_150', 'FLUR')
-abimo@data <- abimo@data[, requiredCols]
+abimo@data <- kwb.utils::selectColumns(abimo@data, 
+                                       columns = requiredCols)
 
-# format numbers to 0 decimal places
-abimo@data[, 8:ncol(abimo@data)] <- round(
-  abimo@data[, 8:ncol(abimo@data)],
-  digits = 0)
+# format numbers to 0 decimal places (avoid 'pseudo-accuracy')
+#abimo@data[, 8:ncol(abimo@data)] <- round(
+#  abimo@data[, 8:ncol(abimo@data)],
+#  digits = 0)
 
-# change decimal separator to comma (ABIMO does not run correctly otherwise)
+# change decimal separator to comma
+# (ABIMO does not run correctly otherwise) 
 abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
                                          c(1, 2),
                                          FUN=as.character),
@@ -280,12 +253,17 @@ abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
                                  replacement=","),
                            stringsAsFactors = FALSE)
 
+
+
+
 # write ABIMO input table
-abimo_inp <- sprintf('abimo_%s.shp', paths$site)
-abimo_inp_path <- file.path(paths$abimo, abimo_inp)
 raster::shapefile(x=abimo, 
-                  filename=abimo_inp_path,
+                  filename=paths$abimo_inp_shp,
                   overwrite=TRUE)
+
+
+kwb.abimo::write.dbf.abimo(abimo, 
+                           new_dbf = paths$abimo_inp_dbf)
 
 
 # run ABIMO manually in GUI ----------------------------------------------------
@@ -306,30 +284,24 @@ kwb.utils::hsOpenWindowsExplorer(paths$abimo_exe)
 # postprocessing ----------------------------------------------------------------
 # post-process ABIMO output file -> join it with input shape file for 
 # visualization in GIS
-urbanAnnualRunoff::postProcessABIMO(rawdir = paths$abimo,
-                 nameABIMOin = abimo_inp,
-                 nameABIMOout = abimo_out,
-                 ABIMOjoinedName = sprintf("%s_joined.dbf", abimo_out)
-                )
-}
 
-# compute emissions Jinxi with OgRe AMC (annual mean concentration) database
-conc <- urbanAnnualRunoff::read_concentrations(path = paths$emissions_input)
+scenario_results_jinxi <- urbanAnnualRunoff::get_scenario_results(paths)
 
-abimo_inpout_emissions <- urbanAnnualRunoff::calculate_loads(
-  abimo_inpout = abimo_inpout, 
-  concentrations = conc
-  )
-
-# write out joined table output as shapefile
-outFile <- file.path(paths$emissions_output, 
-                     sprintf("abimo_%s_emissions.shp", paths$site))
-  
-raster::shapefile(x = abimo_inpout_emissions, 
-                  filename = outFile, 
-                  overwrite = TRUE)
-
-}
+#usethis::use_data(scenario_results_jinxi, overwrite = TRUE)
 
 
 ```
+
+## Scenario Results
+
+Below is a summary table with the ABIMO water balance modelling results for the different `de-coupling` scenarios. 
+Combining (`combi_xxx`) the different single measures, i.e. `bioretention cells` (for streets), `green roofs` (for sealed areas with buildings),  and `permeable pavements` (for sealed areas without buildings/streets)) enables to satisfy the `VRR` (volume rainfall retended) goal defined for climate zone 4, i.e `0.70 >= VRR <= 0.85`.
+
+
+
+
+```{r scenario_results, eval = TRUE}
+library(urbanAnnualRunoff)
+DT::datatable(urbanAnnualRunoff::scenario_results_jinxi %>%  dplyr::select(!tidyselect::all_of(c("abimo_inpout", "abimo_inpout_emissions"))))
+```
+
