@@ -107,6 +107,23 @@ abimo@data$PROBAU <- urbanAnnualRunoff::makePROBAU(
   rasterData = 'classified_image.img',
   overlayName = 'surfType',
   targetValue = 1)
+
+## Decoupling from SWMM modelling: 
+## https://kwb-r.github.io/keys.lid/articles/scenarios.html#green-roof
+##
+# 100 % green-roof: with_berm_intensive_no-drainmat
+#abimo@data$PROBAU <- (1-1*(90.42-15.2)/100)*abimo@data$PROBAU # combi_high
+# 50 % green-roof: with_berm_intensive_no-drainmat
+#abimo@data$PROBAU <- (1-0.5*(90.42-15.2)/100)*abimo@data$PROBAU # combi_medium
+# 25 % green-roof: with_berm_intensive_no-drainmat
+#abimo@data$PROBAU <- (1-0.25*(90.42-15.2)/100)*abimo@data$PROBAU 
+# 100 % green-roof: with_berm_extensive_no-drainmat
+#abimo@data$PROBAU <- (1-1*(72.6-15.2)/100)*abimo@data$PROBAU
+# 50 % green-roof: with_berm_extensive_no-drainmat
+#abimo@data$PROBAU <- (1-0.5*(72.6-15.2)/100)*abimo@data$PROBAU
+# 25 % green-roof: with_berm_extensive_no-drainmat
+#abimo@data$PROBAU <- (1-0.25*(72.6-15.2)/100)*abimo@data$PROBAU # combi_low
+
   
 # compute ABIMO variable STR_FLGES (m2 street area)
 abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(
@@ -123,6 +140,94 @@ abimo@data$VG <- urbanAnnualRunoff::makeVG(
   subcatchmSPobject = abimo,
   rasterData = 'input_impervious.tif',
   targetValue = 80)
+
+# compute ABIMO variable PROVGU (% other impervious areas) as 
+# PROVGU = VG - PROBAU, setting any negative values to 0. this
+# happens for only <10% of subcatchments, and results mainly from
+# differences in spatial resolution and classification differences
+# between both datasets (our classified image and the global land 
+# use dataset)
+abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
+                            abimo@data$VG - abimo@data$PROBAU,
+                            0)
+
+## Decoupling from SWMM modelling: 
+## https://kwb-r.github.io/keys.lid/articles/scenarios.html#permeable-pavements
+## provgu <- abimo@data$PROVGU
+## abimo@data$PROVGU <- provgu
+# 100 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-100*(0.572-0.152)/50)*abimo@data$PROVGU # combi_high
+#  50 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-50*(0.572-0.152)/50)*abimo@data$PROVGU # combi_medium
+#  25 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-25*(0.572-0.152)/50)*abimo@data$PROVGU
+#  10 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-10*(0.572-0.152)/50)*abimo@data$PROVGU # combi_low
+
+# use raw code to compute and assign remaining ABIMO variables manually
+
+### use Berlin Abimo data (for 'Blockteilflaechen' connected to channelisation ### to imrpove default parameterisation for 'unkown' underground types in Beijing 
+abimo_berlin <- foreign::read.dbf(paths$abimo_berlin) %>% 
+  dplyr::filter(KANAL == 1)
+
+share_vg_str <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^VGSTRASSE"), drop = FALSE] * abimo_berlin$STR_FLGES /sum(abimo_berlin$STR_FLGES))
+                       
+share_belag <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^BELAG")] * abimo_berlin$FLGES /sum(abimo_berlin$FLGES))
+share_belag <- share_belag*100/sum(share_belag)
+
+share_belag_str <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^STR_BELAG")] * abimo_berlin$STR_FLGES /sum(abimo_berlin$STR_FLGES))
+share_belag_str <- share_belag_str*100/sum(share_belag_str)
+
+share_kan <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^KAN_")] * (abimo_berlin$FLGES+abimo_berlin$STR_FLGES) /sum(abimo_berlin$FLGES+abimo_berlin$STR_FLGES))
+
+# % imperviousness streets
+abimo@data$VGSTRASSE <- share_vg_str #100 -> 90.0402
+
+## Decoupling from SWMM modelling: 
+## https://kwb-r.github.io/keys.lid/articles/scenarios.html#bioretention-cell
+## scenario: 3.6mm.per.h_mulde_no-drainage
+
+# 40 % of street area (unsealed area used as bioretention-cell)
+#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 40*(57.2-15.2)/50,1) #56.4 # combi_high
+# 20 % of street area (unsealed area used as bioretention-cell)
+#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 20*(57.2-15.2)/50,1) #73.2 # combi_medium
+# 10 % of street area (unsealed area used as bioretention-cell)
+#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 10*(57.2-15.2)/50,1) #81.6
+#  5 % of street area (unsealed area used as bioretention-cell)
+#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 5*(57.2-15.2)/50,1) #85.8 # combi_low
+
+# %cover types in other imperv. areas (PROVGU)
+abimo@data$BELAG1 <- share_belag[1] #100 -> 34.69844
+abimo@data$BELAG2 <- share_belag[2] #  0 -> 48.03494
+abimo@data$BELAG3 <- share_belag[3] #  0 ->  5.54433
+abimo@data$BELAG4 <- share_belag[4] #  0 -> 11.72229
+
+# %cover types in street areas
+abimo@data$STR_BELAG1 <- share_belag_str[1] #100 -> 51.344865
+abimo@data$STR_BELAG2 <- share_belag_str[2] #0 -> 26.501014
+abimo@data$STR_BELAG3 <- share_belag_str[3] #0 -> 14.497974
+abimo@data$STR_BELAG4 <- share_belag_str[4] #0 ->  7.656147
+
+# identifiers
+abimo@data$BEZIRK <- 1
+abimo@data$STAGEB <- 1
+abimo@data$BLOCK <- 1
+abimo@data$TEILBLOCK <- 1
+abimo@data$NUTZUNG <- 21
+abimo@data$TYP <- 21
+
+
+# channelization degrees. these are set manually since there is no data
+abimo@data$KANAL <- 1
+abimo@data$KAN_BEB <- 80
+abimo@data$KAN_VGU <- 80
+abimo@data$KAN_STR <- 80
+
+# soil field capacity and groundwater level (personal communication, Dr. Lipin Li, 
+# Harbin Inst. of Technology)
+abimo@data$FELD_30 <- 30
+abimo@data$FELD_150 <- 30
+abimo@data$FLUR <- 1.17
 
 # compute annual and summer rainfall. 
 # *** potential enhancement: ***
@@ -176,54 +281,6 @@ kwb.abimo::abimo_xml_evap(
 
 ### Check modified ABIMO config.xml
 kwb.utils::hsOpenWindowsExplorer(paths$abimo_config_modified)
-
-# compute ABIMO variable PROVGU (% other impervious areas) as 
-# PROVGU = VG - PROBAU, setting any negative values to 0. this
-# happens for only <10% of subcatchments, and results mainly from
-# differences in spatial resolution and classification differences
-# between both datasets (our classified image and the global land 
-# use dataset)
-abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
-                            abimo@data$VG - abimo@data$PROBAU,
-                            0)
-
-# % imperviousness streets
-abimo@data$VGSTRASSE <- 100
-
-# %cover types in other imperv. areas (PROVGU)
-abimo@data$BELAG1 <- 100
-abimo@data$BELAG2 <- 0
-abimo@data$BELAG3 <- 0
-abimo@data$BELAG4 <- 0
-
-# %cover types in street areas
-abimo@data$STR_BELAG1 <- 100
-abimo@data$STR_BELAG2 <- 0
-abimo@data$STR_BELAG3 <- 0
-abimo@data$STR_BELAG4 <- 0
-
-# identifiers
-abimo@data$BEZIRK <- 1
-abimo@data$STAGEB <- 1
-abimo@data$BLOCK <- 1
-abimo@data$TEILBLOCK <- 1
-abimo@data$NUTZUNG <- 21
-abimo@data$TYP <- 21
-
-
-# channelization degrees. these are set manually since there is no data
-abimo@data$KANAL <- 1
-abimo@data$KAN_BEB <- 100
-abimo@data$KAN_VGU <- 100
-abimo@data$KAN_STR <- 100
-
-# soil field capacity and groundwater level (personal communication, Dr. Lipin Li, 
-# Harbin Inst. of Technology)
-abimo@data$FELD_30 <- 30
-abimo@data$FELD_150 <- 30
-abimo@data$FLUR <- 1.17
-
-# select required columns and write out new shapefile
 
 # select required columns and write out new shapefile
 requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 
@@ -295,7 +352,7 @@ scenario_results_jinxi <- urbanAnnualRunoff::get_scenario_results(paths)
 ## Scenario Results
 
 Below is a summary table with the ABIMO water balance modelling results for the different `de-coupling` scenarios. 
-Combining (`combi_xxx`) the different single measures, i.e. `bioretention cells` (for streets), `green roofs` (for sealed areas with buildings),  and `permeable pavements` (for sealed areas without buildings/streets)) enables to satisfy the `VRR` (volume rainfall retended) goal defined for climate zone 4, i.e `0.70 >= VRR <= 0.85`.
+Combining (`combi_xxx`) the different single measures, i.e. `bioretention cells` (for streets), `green roofs` (for sealed areas with buildings),  and `permeable pavements` (for sealed areas without buildings/streets)) enables to satisfy the `VRR` (volume rainfall retended) goal defined for climate zone 3, i.e `0.75 >= VRR <= 0.85`.
 
 
 
