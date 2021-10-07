@@ -80,7 +80,9 @@ scenario_results_list <- lapply(scenario_dirs, function(scenario_dir) {
 
   loads_sum <- abimo_inpout_emissions@data %>%
     dplyr::summarise(dplyr::across(tidyselect::ends_with("kg_yr"),
-                                   .fns = sum))
+                                   .fns = sum)) %>%
+    dplyr::mutate(dplyr::across(tidyselect::ends_with("kg_yr"),
+                                   .fns = round))
 
   tibble::tibble(scenario_name = scenario_name,
                  get_abimo_stats(abimo_inpout),
