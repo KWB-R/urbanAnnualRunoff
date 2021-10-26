@@ -46,7 +46,9 @@ path_list <- list(
   gis = "<root_path>/<data>/_DataAnalysis/gis",
   climate = "<root_path>/<data>/_DataAnalysis/climate",
   emissions_input = "<root_path>/<data>/_DataAnalysis/emissions/input/annual_mean_conc.csv",
-  emissions_output = "<root_path>/<data>/_DataAnalysis/emissions/output"
+  emissions_output = "<root_path>/<data>/_DataAnalysis/emissions/output",
+  landuse_hit = "<gis>/manual_processing/landuse_hit.dbf",
+  landuse_kwb = "<gis>/manual_processing/landuse_kwb.tif"
 )
 
 paths <- kwb.utils::resolve(path_list)
@@ -362,3 +364,47 @@ library(urbanAnnualRunoff)
 DT::datatable(urbanAnnualRunoff::scenario_results_jinxi %>%  dplyr::select(!tidyselect::all_of(c("abimo_inpout", "abimo_inpout_emissions"))))
 ```
 
+
+## Land Use Classification Comparison 
+
+```{r landuse_comparison, eval = FALSE}
+landuse_hit <- shapefiles::read.dbf(paths$landuse_hit)
+landuse_hit_stats <- landuse_hit$dbf %>%  
+  dplyr::mutate(landuse_name = kwb.utils::multiSubstitute(.data$landuse, 
+                           list(
+                           '1' = "pervious",
+                           '2' = "pervious",
+                           '3' = "roof", 
+                           '4' = "street",
+                           '5' = "water")
+                           )
+                ) %>%
+  dplyr::group_by(.data$landuse_name) %>% 
+  dplyr::summarise(area_m2 = sum(.data$area_m2),
+                   area_percent = round(100*area_m2/sum(landuse_hit$dbf$area_m2),1)) %>% 
+  dplyr::rename(landuse = .data$landuse_name) %>%  
+  dplyr::arrange(.data$landuse) %>% 
+  dplyr::select(.data$landuse, .data$area_percent)
+
+landuse_kwb <- raster::raster(paths$landuse_kwb)
+
+landuse_kwb_values <- raster::values(landuse_kwb)
+landuse_kwb_values_vector <- table(landuse_kwb_values[!is.na(landuse_kwb_values)])
+landuse_kwb_stats <- tibble::tibble(landuse_id = names(landuse_kwb_values_vector),
+                                    landuse = kwb.utils::multiSubstitute(landuse_id,
+                                                                         list('1' = "roof",
+                                                                              '2' = "street",
+                                                                              '3' = "pervious",
+                                                                              '4' = "shadow",
+                                                                              '5' = "water")),
+                                    area_m2 = landuse_kwb_values_vector,
+                                    area_total = sum(landuse_kwb_values_vector),
+                                    area_percent = round(100*area_m2/area_total,1)) %>%  
+  dplyr::arrange(.data$landuse) %>% 
+  dplyr::select(.data$landuse, .data$area_percent)
+
+openxlsx::write.xlsx(list(landuse_hit_stats = landuse_hit_stats,
+                          landuse_kwb_stats = landuse_kwb_stats),
+                     file = "landuse_classification_comparison.xlsx"
+                     )
+```

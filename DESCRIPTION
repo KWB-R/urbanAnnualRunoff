@@ -43,6 +43,7 @@ Suggests:
     knitr,
     kwb.abimo,
     kwb.ml,
+    openxlsx,
     remotes,
     rmarkdown
 VignetteBuilder: 
