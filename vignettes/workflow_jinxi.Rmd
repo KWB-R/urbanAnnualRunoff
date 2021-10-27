@@ -228,9 +228,9 @@ abimo@data$TYP <- 21
 
 # channelization degrees. these are set manually since there is no data
 abimo@data$KANAL <- 1
-abimo@data$KAN_BEB <- 100
-abimo@data$KAN_VGU <- 100
-abimo@data$KAN_STR <- 100
+abimo@data$KAN_BEB <- 80
+abimo@data$KAN_VGU <- 80
+abimo@data$KAN_STR <- 80
 
 # soil field capacity and groundwater level (personal communication, Dr. Lipin Li, 
 # Harbin Inst. of Technology)
@@ -352,7 +352,7 @@ kwb.utils::hsOpenWindowsExplorer(paths$abimo_exe)
 # visualization in GIS
 
 scenario_results_jinxi <- urbanAnnualRunoff::get_scenario_results(paths)
-
+openxlsx::write.xlsx()
 #usethis::use_data(scenario_results_jinxi, overwrite = TRUE)
 
 
@@ -448,14 +448,16 @@ openxlsx::write.xlsx(list(landuse_hit_stats = landuse_hit_stats,
 ```{r water_balance_comparison, eval = FALSE}
 sewer_connection <- readxl::read_xls(paths$sewer_connection)
 sewer_connection_stats <- catchments_hit_abimo$dbf %>% 
-  dplyr::left_join(sewer_connection, by = "subcatchment_name") 
+  dplyr::mutate(area_percent = .data$area_m2/sum(catchments_hit_abimo$dbf$area_m2)) %>% 
+  dplyr::left_join(sewer_connection, by = "subcatchment_name") %>% 
+  dplyr::summarise(connection_percent = sum(.data$area_percent*.data$connect))
 
 swmm_annualrunoff <- read.table(file = paths$swmm_annualrunoff,  
                                 sep = "", 
                                 skip = 9, 
                                 header = TRUE)
 
-swmm_res <- catchments_hit_abimo$dbf[,c("subcatchment_name", "area_m2")] %>% 
+swmm_catchment_abimo <- catchments_hit_abimo$dbf[,c("subcatchment_name", "area_m2")] %>% 
   dplyr::mutate(area_percent = .data$area_m2/sum(catchments_hit_abimo$dbf$area_m2)) %>% 
   dplyr::left_join(swmm_annualrunoff, by = "subcatchment_name") %>% 
   dplyr::summarise(total_precip_mm = sum(.data$area_percent*.data$total_precip_mm),
@@ -463,4 +465,24 @@ swmm_res <- catchments_hit_abimo$dbf[,c("subcatchment_name", "area_m2")] %>%
                    total_infil_mm = sum(.data$area_percent*.data$total_infil_mm),
                    total_runoff_mm = sum(.data$area_percent*.data$total_runoff_mm)) %>% 
   dplyr::mutate(vrr = round((1 - total_runoff_mm/total_precip_mm)*100, 1))
+
+catchments_hit_all <- shapefiles::read.dbf(paths$catchments_hit_all)
+names(catchments_hit_all$dbf)[5] <- "subcatchment_name"
+
+swmm_catchment_all <- catchments_hit_all$dbf[,c("subcatchment_name", "area_m2")] %>% 
+  dplyr::mutate(area_percent = .data$area_m2/sum(catchments_hit_abimo$dbf$area_m2)) %>% 
+  dplyr::left_join(swmm_annualrunoff, by = "subcatchment_name") %>% 
+  dplyr::summarise(total_precip_mm = sum(.data$area_percent*.data$total_precip_mm),
+                   total_evap_mm = sum(.data$area_percent*.data$total_evap_mm),
+                   total_infil_mm = sum(.data$area_percent*.data$total_infil_mm),
+                   total_runoff_mm = sum(.data$area_percent*.data$total_runoff_mm)) %>% 
+  dplyr::mutate(vrr = round((1 - total_runoff_mm/total_precip_mm)*100, 1))
+
+
+swmm_catchment_stats <- dplyr::bind_cols(tibble::tibble(catchment = c("all", "abimo")),
+                                         dplyr::rbind(swmm_catchment_all, 
+                                                      swmm_catchment_abimo)
+                                         )
+
+
 ```
