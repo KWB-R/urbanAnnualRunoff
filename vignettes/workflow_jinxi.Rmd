@@ -34,6 +34,7 @@ path_list <- list(
   root_path = "C:/kwb/projects/keys/Data-Work packages",
   site = "Jinxi",
   data = "WP2_SUW_pollution_<site>",
+  data_hit = "<root_path>/<data>/_DataHIT",
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
   abimo_inp_shp = "<abimo>/abimo_<site>.shp",
   abimo_inp_dbf = "<abimo>/abimo_<site>.dbf",
@@ -48,10 +49,16 @@ path_list <- list(
   emissions_input = "<root_path>/<data>/_DataAnalysis/emissions/input/annual_mean_conc.csv",
   emissions_output = "<root_path>/<data>/_DataAnalysis/emissions/output",
   landuse_hit = "<gis>/manual_processing/landuse_hit.dbf",
-  landuse_kwb = "<gis>/manual_processing/landuse_kwb.tif"
+  landuse_kwb = "<gis>/manual_processing/landuse_kwb.tif",
+  catchments_hit_all =  "<gis>/manual_processing/catchments_hit_abimo_all.dbf",
+  catchments_hit_abimo =  "<gis>/manual_processing/catchments_hit_abimo_area.dbf",
+  landuse_authority = "<data_hit>/2021-03-31_HIT_landuse-per-subcatchment/subcatchments_landuse_v1.0.0.xlsx",
+  swmm_annualrunoff = "<data_hit>/WP2_Data_HIT_20201023/swmm_annual_runoff_v1.0.0.txt",
+  sewer_connection = "<data_hit>/2021-10-18_email/cleaned/subcatchments_sewer-connection.xls"
 )
 
 paths <- kwb.utils::resolve(path_list)
+
 
 # load shapefile containing subcatchments ('blockteilflächen')
 abimo <- raster::shapefile(file.path(paths$gis, 'input_subareas.shp'))
@@ -221,9 +228,9 @@ abimo@data$TYP <- 21
 
 # channelization degrees. these are set manually since there is no data
 abimo@data$KANAL <- 1
-abimo@data$KAN_BEB <- 80
-abimo@data$KAN_VGU <- 80
-abimo@data$KAN_STR <- 80
+abimo@data$KAN_BEB <- 100
+abimo@data$KAN_VGU <- 100
+abimo@data$KAN_STR <- 100
 
 # soil field capacity and groundwater level (personal communication, Dr. Lipin Li, 
 # Harbin Inst. of Technology)
@@ -403,8 +410,57 @@ landuse_kwb_stats <- tibble::tibble(landuse_id = names(landuse_kwb_values_vector
   dplyr::arrange(.data$landuse) %>% 
   dplyr::select(.data$landuse, .data$area_percent)
 
+
+catchments_hit_abimo <- shapefiles::read.dbf(paths$catchments_hit_abimo)
+names(catchments_hit_abimo$dbf)[5] <- "subcatchment_name"
+
+
+landuse_authority_data <- readxl::read_xlsx(paths$landuse_authority, 
+                                            sheet = "data")
+landuse_authority_metadata <- readxl::read_xlsx(paths$landuse_authority, 
+                                                sheet = "metadata")
+
+landuse_authority_stats <- landuse_authority_data %>%  
+  dplyr::left_join(landuse_authority_metadata,
+                   by = "landuse_id") %>% 
+  dplyr::right_join(catchments_hit_abimo$dbf[,c("subcatchment_name", "area_m2")],
+                   by = "subcatchment_name") %>% 
+  dplyr::group_by(.data$landuse_name) %>% 
+  dplyr::summarise(percent = round(sum(.data$area_m2 * .data$percent)/sum(catchments_hit_abimo$dbf$area_m2),1)) %>% 
+  dplyr::mutate(landuse_name = kwb.utils::multiSubstitute(.data$landuse_name, 
+                             list('greenland' = "pervious",
+                                  'road' = "streets"
+                                  ))) %>% 
+  dplyr::arrange(.data$landuse_name)
+
+
 openxlsx::write.xlsx(list(landuse_hit_stats = landuse_hit_stats,
-                          landuse_kwb_stats = landuse_kwb_stats),
-                     file = "landuse_classification_comparison.xlsx"
+                          landuse_kwb_stats = landuse_kwb_stats,
+                          landuse_authority_stats = landuse_authority_stats ),
+                     file = "landuse_classification_comparison.xlsx",
+                     overwrite = TRUE
                      )
+
+```
+
+## ABIMO vs SWMM Comparison 
+
+```{r water_balance_comparison, eval = FALSE}
+sewer_connection <- readxl::read_xls(paths$sewer_connection)
+sewer_connection_stats <- catchments_hit_abimo$dbf %>% 
+  dplyr::left_join(sewer_connection, by = "subcatchment_name") 
+
+swmm_annualrunoff <- read.table(file = paths$swmm_annualrunoff,  
+                                sep = "", 
+                                skip = 9, 
+                                header = TRUE)
+
+swmm_res <- catchments_hit_abimo$dbf[,c("subcatchment_name", "area_m2")] %>% 
+  dplyr::mutate(area_percent = .data$area_m2/sum(catchments_hit_abimo$dbf$area_m2)) %>% 
+  dplyr::left_join(swmm_annualrunoff, by = "subcatchment_name") %>% 
+  dplyr::summarise(total_precip_mm = sum(.data$area_percent*.data$total_precip_mm),
+                   total_evap_mm = sum(.data$area_percent*.data$total_evap_mm),
+                   total_infil_mm = sum(.data$area_percent*.data$total_infil_mm),
+                   total_runoff_mm = sum(.data$area_percent*.data$total_runoff_mm)) %>% 
+  dplyr::mutate(vrr = round((1 - total_runoff_mm/total_precip_mm)*100, 1))
 ```
