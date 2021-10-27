@@ -50,7 +50,7 @@ path_list <- list(
   emissions_output = "<root_path>/<data>/_DataAnalysis/emissions/output",
   landuse_hit = "<gis>/manual_processing/landuse_hit.dbf",
   landuse_kwb = "<gis>/manual_processing/landuse_kwb.tif",
-  catchments_hit_all =  "<gis>/manual_processing/catchments_hit_abimo_all.dbf",
+  catchments_hit_all =  "<gis>/manual_processing/catchments_hit_all_area.dbf",
   catchments_hit_abimo =  "<gis>/manual_processing/catchments_hit_abimo_area.dbf",
   landuse_authority = "<data_hit>/2021-03-31_HIT_landuse-per-subcatchment/subcatchments_landuse_v1.0.0.xlsx",
   swmm_annualrunoff = "<data_hit>/WP2_Data_HIT_20201023/swmm_annual_runoff_v1.0.0.txt",
@@ -263,6 +263,12 @@ climate_data <- dplyr::inner_join(precipitation, evapotranspiration,
                                   suffix = c(".p", ".etp")) %>%  
   dplyr::mutate(dplyr::across(tidyselect::ends_with("p"), round))
 
+climate_data_mean <- dplyr::bind_cols(tibble::tibble(time_period = "2015-2019"), 
+                                      climate_data %>%  dplyr::summarise(
+                                        dplyr::across(.cols = tidyselect::starts_with("sum"), 
+                                                      .fns = mean)))
+openxlsx::write.xlsx(climate_data_mean, "climate_data_mean.xlsx")
+
 #wet year 2320mm (2016)
 #climate_data <- climate_data %>%  dplyr::filter(year == "2016")
 
@@ -352,7 +358,11 @@ kwb.utils::hsOpenWindowsExplorer(paths$abimo_exe)
 # visualization in GIS
 
 scenario_results_jinxi <- urbanAnnualRunoff::get_scenario_results(paths)
-openxlsx::write.xlsx()
+
+scenario_results_jinxi %>%  
+dplyr::select(!tidyselect::all_of(c("abimo_inpout", "abimo_inpout_emissions"))) %>% 
+openxlsx::write.xlsx(file = "scenario_results_jinxi.xlsx",
+                     overwrite = TRUE)
 #usethis::use_data(scenario_results_jinxi, overwrite = TRUE)
 
 
@@ -446,11 +456,6 @@ openxlsx::write.xlsx(list(landuse_hit_stats = landuse_hit_stats,
 ## ABIMO vs SWMM Comparison 
 
 ```{r water_balance_comparison, eval = FALSE}
-sewer_connection <- readxl::read_xls(paths$sewer_connection)
-sewer_connection_stats <- catchments_hit_abimo$dbf %>% 
-  dplyr::mutate(area_percent = .data$area_m2/sum(catchments_hit_abimo$dbf$area_m2)) %>% 
-  dplyr::left_join(sewer_connection, by = "subcatchment_name") %>% 
-  dplyr::summarise(connection_percent = sum(.data$area_percent*.data$connect))
 
 swmm_annualrunoff <- read.table(file = paths$swmm_annualrunoff,  
                                 sep = "", 
@@ -470,7 +475,7 @@ catchments_hit_all <- shapefiles::read.dbf(paths$catchments_hit_all)
 names(catchments_hit_all$dbf)[5] <- "subcatchment_name"
 
 swmm_catchment_all <- catchments_hit_all$dbf[,c("subcatchment_name", "area_m2")] %>% 
-  dplyr::mutate(area_percent = .data$area_m2/sum(catchments_hit_abimo$dbf$area_m2)) %>% 
+  dplyr::mutate(area_percent = .data$area_m2/sum(catchments_hit_all$dbf$area_m2)) %>% 
   dplyr::left_join(swmm_annualrunoff, by = "subcatchment_name") %>% 
   dplyr::summarise(total_precip_mm = sum(.data$area_percent*.data$total_precip_mm),
                    total_evap_mm = sum(.data$area_percent*.data$total_evap_mm),
@@ -480,9 +485,29 @@ swmm_catchment_all <- catchments_hit_all$dbf[,c("subcatchment_name", "area_m2")]
 
 
 swmm_catchment_stats <- dplyr::bind_cols(tibble::tibble(catchment = c("all", "abimo")),
-                                         dplyr::rbind(swmm_catchment_all, 
+                                         dplyr::bind_rows(swmm_catchment_all, 
                                                       swmm_catchment_abimo)
                                          )
 
+sewer_connection <- readxl::read_xls(paths$sewer_connection)
+sewer_connection_stats_abimo <- catchments_hit_abimo$dbf %>% 
+  dplyr::mutate(area_percent = .data$area_m2/sum(catchments_hit_abimo$dbf$area_m2)) %>% 
+  dplyr::left_join(sewer_connection, by = "subcatchment_name") %>% 
+  dplyr::summarise(connection_percent = sum(.data$area_percent*.data$connect))
+
+
+sewer_connection_stats_all <- catchments_hit_all$dbf %>% 
+  dplyr::mutate(area_percent = .data$area_m2/sum(catchments_hit_all$dbf$area_m2)) %>% 
+  dplyr::left_join(sewer_connection, by = "subcatchment_name") %>% 
+  dplyr::summarise(connection_percent = sum(.data$area_percent*.data$connect))
+
+sewer_connection_stats <- dplyr::bind_cols(tibble::tibble(catchment = c("all", "abimo")),
+                                         dplyr::bind_rows(sewer_connection_stats_all, 
+                                                      sewer_connection_stats_abimo)
+                                         )
+
+
+urbanAnnualRunoff::read_concentrations(paths$emissions_input)[,c("VariableName", "mean", "UnitsAbbreviation")] %>% 
+  openxlsx::write.xlsx("concentrations.xlsx")
 
 ```
