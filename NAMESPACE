@@ -3,6 +3,7 @@
 export("%>%")
 export(calculate_loads)
 export(computeABIMOclimate)
+export(fix_abimo_shares)
 export(get_abimo_stats)
 export(get_scenario_results)
 export(makeFLGES)

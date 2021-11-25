@@ -109,13 +109,18 @@ makePROBAU <- function(rawdir, rasterData, overlayName, targetValue){
 #' @param overlayName overlayName
 #' @param targetValue targetValue
 #' @param mask mask
-#'
+#' @param add_streets_outside_subcatchments boolean (TRUE/FALSE), if TRUE:
+#' as is done for Berlin, street area outside of the subcatchment polygons is distributed
+#' among the polygons in proportion to their area. thus: street area of polygon =
+#' internal street area + allocated external street area, if FALSE: only street
+#' area within subcatchments are counted (default: FALSE)
 #' @return STR_FLGES
 #' @export
 #'
 #' @importFrom  raster mask shapefile raster res
 makeSTR_FLGES <- function(rawdir, subcatchmSPobject, rasterData,
-                          overlayName, targetValue, mask){
+                          overlayName, targetValue, mask,
+                          add_streets_outside_subcatchments = FALSE){
 
 
   # load data
@@ -137,6 +142,7 @@ makeSTR_FLGES <- function(rawdir, subcatchmSPobject, rasterData,
   # compute raster cell area
   rasterRes <- raster::res(surf)
   cellsize <- rasterRes[1]*rasterRes[2]
+  message(sprintf("Raster cell size: %d m2", round(cellsize,0)))
 
   # compute internal street area (streets within subcatchment polygons)
   streetAreaIn <- as.numeric(sapply(X=get(overlayName),
@@ -146,6 +152,7 @@ makeSTR_FLGES <- function(rawdir, subcatchmSPobject, rasterData,
   # among the polygons in proportion to their area. thus:
   # street area of polygon = internal street area + allocated external street area
 
+  if(add_streets_outside_subcatchments) {
   # total street area in study area
   sa <- surf2[surf2==targetValue]
   sa <- sa[!is.na(sa)]
@@ -157,7 +164,9 @@ makeSTR_FLGES <- function(rawdir, subcatchmSPobject, rasterData,
   # distribute streetAreaOut among subcatchments in proportion to their area
   STR_FLGES <- streetAreaIn +
     streetAreaOut*subcatchmSPobject@data$FLGES/sum(subcatchmSPobject@data$FLGES)
-
+  } else {
+  STR_FLGES <- streetAreaIn
+}
   return(STR_FLGES)
 }
 
