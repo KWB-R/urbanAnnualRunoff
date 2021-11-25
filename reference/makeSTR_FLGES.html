@@ -153,7 +153,8 @@
   <span class='va'>rasterData</span>,
   <span class='va'>overlayName</span>,
   <span class='va'>targetValue</span>,
-  <span class='va'>mask</span>
+  <span class='va'>mask</span>,
+  add_streets_outside_subcatchments <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -182,6 +183,14 @@
     <tr>
       <th>mask</th>
       <td><p>mask</p></td>
+    </tr>
+    <tr>
+      <th>add_streets_outside_subcatchments</th>
+      <td><p>boolean (TRUE/FALSE), if TRUE:
+as is done for Berlin, street area outside of the subcatchment polygons is distributed
+among the polygons in proportion to their area. thus: street area of polygon =
+internal street area + allocated external street area, if FALSE: only street
+area within subcatchments are counted (default: FALSE)</p></td>
     </tr>
     </table>
 
