@@ -118,7 +118,6 @@ abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(
 # make ABIMO variable FLGES
 abimo@data$FLGES <- urbanAnnualRunoff::makeFLGES(subcatchmSPobject = abimo) - abimo@data$STR_FLGES
 
-
 # compute ABIMO variable VG (% soil sealing)
 abimo@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
                         subcatchmSPobject = abimo,
@@ -152,7 +151,6 @@ abimo <- urbanAnnualRunoff::fix_abimo_shares(abimo)
 #abimo@data$PROBAU <- (1-0.5*(72.6-15.2)/100)*abimo@data$PROBAU
 # 25 % green-roof: with_berm_extensive_no-drainmat
 #abimo@data$PROBAU <- (1-0.25*(72.6-15.2)/100)*abimo@data$PROBAU # combi_low
-
 
 
 ## Decoupling from SWMM modelling: 
