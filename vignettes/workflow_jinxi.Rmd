@@ -112,8 +112,8 @@ urbanAnnualRunoff::makeOverlay(rawdir = paths$gis,
 abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(
   rawdir = paths$gis,
   subcatchmSPobject = abimo,
-  mask = 'input_mask.shp',
-  rasterData = 'classified_image.tif',
+  mask = 'input_maskUrbanCore.shp',
+  rasterData = 'classified_image.img',
   overlayName = 'surfType',
   targetValue = 2, 
   add_streets_outside_subcatchments = FALSE
