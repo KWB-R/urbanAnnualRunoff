@@ -55,13 +55,13 @@ path_list <- list(
 paths <- kwb.utils::resolve(path_list)
 
 # load shapefile containing subcatchments ('blockteilflächen')
-abimo <- raster::shapefile(file.path(paths$gis, 'input_subareas.shp'))
+abimo_org <- raster::shapefile(file.path(paths$gis, 'input_subareas.shp'))
 
-# make ABIMO 'CODE' column
-abimo@data$CODE <- paste(abimo@data$Name, abimo@data$Outlet, sep='_')
+# make abimo 'CODE' column
+abimo_org@data$CODE <- paste(abimo_org@data$Name, abimo_org@data$Outlet, sep='_')
 
 # pad CODE with zeroes to match output of ABIMO
-abimo@data$CODE <- urbanAnnualRunoff::padCODE(abimo@data$CODE)
+abimo_org@data$CODE <- urbanAnnualRunoff::padCODE(abimo_org@data$CODE)
 
 # build classification model
 kwb.ml::buildClassMod(
@@ -100,14 +100,14 @@ kwb.ml::predictSurfClass(rawdir = paths$gis,
 # of the classified image for each subcatchment)
 urbanAnnualRunoff::makeOverlay(rawdir = paths$gis,
                                rasterData = 'classified_image.tif',
-                               subcatchmSPobject = abimo,
+                               subcatchmSPobject = abimo_org,
                                overlayName = 'surfType')
 
 
 # compute ABIMO variable STR_FLGES (m2 street area)
-abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(
+abimo_org@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(
   rawdir = paths$gis,
-  subcatchmSPobject = abimo,
+  subcatchmSPobject = abimo_org,
   mask = 'input_mask.shp',
   rasterData = 'classified_image.tif',
   overlayName = 'surfType',
@@ -116,16 +116,16 @@ abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(
   )
 
 # make ABIMO variable FLGES
-abimo@data$FLGES <- urbanAnnualRunoff::makeFLGES(subcatchmSPobject = abimo) - abimo@data$STR_FLGES
+abimo_org@data$FLGES <- urbanAnnualRunoff::makeFLGES(subcatchmSPobject = abimo_org) - abimo_org@data$STR_FLGES
 
 # compute ABIMO variable VG (% soil sealing)
-abimo@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
-                        subcatchmSPobject = abimo,
+abimo_org@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
+                        subcatchmSPobject = abimo_org,
                         rasterData = 'input_impervious.tif',
                         targetValue = 80)
 
 # compute ABIMO variable PROBAU (%roof)
-abimo@data$PROBAU <- urbanAnnualRunoff::makePROBAU(
+abimo_org@data$PROBAU <- urbanAnnualRunoff::makePROBAU(
   rawdir = paths$gis,
   rasterData = 'classified_image.tif',
   overlayName = 'surfType',
@@ -133,24 +133,26 @@ abimo@data$PROBAU <- urbanAnnualRunoff::makePROBAU(
 
 
 ### fix previously wrong calculated area shares (PROBAU, PROVGU, STR_FLGES)
-abimo <- urbanAnnualRunoff::fix_abimo_shares(abimo)
+abimo <- urbanAnnualRunoff::fix_abimo_shares(abimo_org)
 
 
 ## Decoupling from SWMM modelling: 
 ## https://kwb-r.github.io/keys.lid/articles/scenarios.html#green-roof
 ##
 # 100 % green-roof: with_berm_intensive_no-drainmat
-#abimo@data$PROBAU <- (1-1*(90.42-15.2)/100)*abimo@data$PROBAU # combi_high
+#abimo@data$PROBAU <- (1-1*(90.42-15.2)/100)*abimo@data$PROBAU # combi-1_high
 # 50 % green-roof: with_berm_intensive_no-drainmat
-#abimo@data$PROBAU <- (1-0.5*(90.42-15.2)/100)*abimo@data$PROBAU # combi_medium
+#abimo@data$PROBAU <- (1-0.5*(90.42-15.2)/100)*abimo@data$PROBAU # combi-1_medium
 # 25 % green-roof: with_berm_intensive_no-drainmat
-#abimo@data$PROBAU <- (1-0.25*(90.42-15.2)/100)*abimo@data$PROBAU 
+#abimo@data$PROBAU <- (1-0.25*(90.42-15.2)/100)*abimo@data$PROBAU # combi-1_low
 # 100 % green-roof: with_berm_extensive_no-drainmat
-#abimo@data$PROBAU <- (1-1*(72.6-15.2)/100)*abimo@data$PROBAU
+#abimo@data$PROBAU <- (1-1*(72.6-15.2)/100)*abimo@data$PROBAU  # combi-2_high
 # 50 % green-roof: with_berm_extensive_no-drainmat
-#abimo@data$PROBAU <- (1-0.5*(72.6-15.2)/100)*abimo@data$PROBAU
+#abimo@data$PROBAU <- (1-0.5*(72.6-15.2)/100)*abimo@data$PROBAU # combi-2_medium
 # 25 % green-roof: with_berm_extensive_no-drainmat
-#abimo@data$PROBAU <- (1-0.25*(72.6-15.2)/100)*abimo@data$PROBAU # combi_low
+#abimo@data$PROBAU <- (1-0.25*(72.6-15.2)/100)*abimo@data$PROBAU # combi-2_low
+
+
 
 
 ## Decoupling from SWMM modelling: 
@@ -161,9 +163,9 @@ abimo <- urbanAnnualRunoff::fix_abimo_shares(abimo)
 #  50 % permeable pavements: 180mm.per.hour_no-drainage
 #abimo@data$PROVGU <- (1-50*(0.572-0.152)/50)*abimo@data$PROVGU # combi_medium
 #  25 % permeable pavements: 180mm.per.hour_no-drainage
-#abimo@data$PROVGU <- (1-25*(0.572-0.152)/50)*abimo@data$PROVGU
+#abimo@data$PROVGU <- (1-25*(0.572-0.152)/50)*abimo@data$PROVGU # combi_low
 #  10 % permeable pavements: 180mm.per.hour_no-drainage
-#abimo@data$PROVGU <- (1-10*(0.572-0.152)/50)*abimo@data$PROVGU # combi_low
+#abimo@data$PROVGU <- (1-10*(0.572-0.152)/50)*abimo@data$PROVGU
 
 # use raw code to compute and assign remaining ABIMO variables manually
 
@@ -194,9 +196,9 @@ abimo@data$VGSTRASSE <- share_vg_str #100 -> 90.0402
 # 20 % of street area (unsealed area used as bioretention-cell)
 #abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 20*(57.2-15.2)/50,1) #73.2 # combi_medium
 # 10 % of street area (unsealed area used as bioretention-cell)
-#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 10*(57.2-15.2)/50,1) #81.6
+#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 10*(57.2-15.2)/50,1) #81.6 # combi_low
 #  5 % of street area (unsealed area used as bioretention-cell)
-#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 5*(57.2-15.2)/50,1) #85.8 # combi_low
+#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 5*(57.2-15.2)/50,1) #85.8
 
 
 
@@ -356,6 +358,11 @@ kwb.utils::hsOpenWindowsExplorer(dirname(paths$abimo_exe))
 # visualization in GIS
 
 scenario_results_beijing <- urbanAnnualRunoff::get_scenario_results(paths)
+
+scenario_results_beijing %>%  
+  dplyr::select(!tidyselect::all_of(c("abimo_inpout", "abimo_inpout_emissions"))) %>% 
+                  openxlsx::write.xlsx(file = "res_tz.xlsx", overwrite = TRUE)
+
 
 #usethis::use_data(scenario_results_beijing, overwrite = TRUE)
 
