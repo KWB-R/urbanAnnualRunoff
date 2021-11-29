@@ -230,7 +230,8 @@ postProcessABIMO <- function(path_input,
 
   # read files
   ABIMOin <- raster::shapefile(x = path_input, stringsAsFactors=FALSE)
-  ABIMOout <- foreign::read.dbf(file = path_output, as.is=TRUE)
+  ABIMOout <- foreign::read.dbf(file = path_output, as.is=TRUE) %>%
+    dplyr::mutate(vrr = (1-.data$ROW/(.data$ROW+.data$RI+.data$VERDUNSTUN))*100)
 
   # join
   ABIMOjoined <- ABIMOin
