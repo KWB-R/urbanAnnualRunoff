@@ -12,20 +12,28 @@ runoff model ABIMO for application in cities with data scarcity.
 
 ## Installation
 
-For details on how to install KWB-R packages checkout our [installation tutorial](https://kwb-r.github.io/kwb.pkgbuild/articles/install.html).
+For installing the latest release of this R package run the following code below:
 
 ```r
-### Optionally: specify GitHub Personal Access Token (GITHUB_PAT)
-### See here why this might be important for you:
-### https://kwb-r.github.io/kwb.pkgbuild/articles/install.html#set-your-github_pat
+# Enable repository from kwb-r
+options(repos = c(
+  kwbr = 'https://kwb-r.r-universe.dev',
+  CRAN = 'https://cloud.r-project.org'))
+  
+# Download and install keys.lid in R
+install.packages('urbanAnnualRunoff')
 
-# Sys.setenv(GITHUB_PAT = "mysecret_access_token")
-
-# Install package "remotes" from CRAN
-if (! require("remotes")) {
-  install.packages("remotes", repos = "https://cloud.r-project.org")
-}
-
-# Install KWB package 'urbanAnnualRunoff' from GitHub
-remotes::install_github("KWB-R/urbanAnnualRunoff")
+# Browse the keys.lid manual pages
+help(package = 'urbanAnnualRunoff')
 ```
+
+## Workflow
+
+The workflow for modelling urban annual runoff using the water balance model [ABIMO](https://github.com/umweltatlas/abimo) is described for the 
+two case-study sites in China here: 
+
+- [Jinxi](articles/workflow_jinxi.html) and 
+
+- [Tongzhou (Beijing)](articles/workflow_beijing.html)
+
+
