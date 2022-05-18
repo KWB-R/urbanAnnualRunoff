@@ -2,7 +2,7 @@
 title: "Workflow: Jinxi"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{"Workflow: Jinxi"}
+  %\VignetteIndexEntry{Workflow: Jinxi}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -29,31 +29,48 @@ Workflow in RStudio:
 7. Restart R Studio"
 )
 } else {
-
-
+  
 path_list <- list(
   root_path = "C:/kwb/projects/keys/Data-Work packages",
   site = "Jinxi",
   data = "WP2_SUW_pollution_<site>",
+  data_hit = "<root_path>/<data>/_DataHIT",
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
+  abimo_inp_shp = "<abimo>/abimo_<site>.shp",
+  abimo_inp_dbf = "<abimo>/abimo_<site>.dbf",
+  abimo_out = "abimo_<site>out.dbf",
+  abimo_berlin = "<abimo>/abimo_2019_mitstrassen.dbf",
+  abimo_scenarios = "<abimo>/scenarios/de-coupling",
+  abimo_config_original = "<abimo>/config_original.xml",
+  abimo_config_modified = "<abimo>/config.xml",
   abimo_exe = "<abimo>/Abimo3_2.exe",
   gis = "<root_path>/<data>/_DataAnalysis/gis",
-  climate = "<root_path>/<data>/_DataAnalysis/climate"
+  climate = "<root_path>/<data>/_DataAnalysis/climate",
+  emissions_input = "<root_path>/<data>/_DataAnalysis/emissions/input/annual_mean_conc.csv",
+  emissions_output = "<root_path>/<data>/_DataAnalysis/emissions/output",
+  landuse_hit = "<gis>/manual_processing/landuse_hit.dbf",
+  landuse_kwb = "<gis>/manual_processing/landuse_kwb.tif",
+  catchments_hit_all =  "<gis>/manual_processing/catchments_hit_all_area.dbf",
+  catchments_hit_abimo =  "<gis>/manual_processing/catchments_hit_abimo_area.dbf",
+  landuse_authority = "<data_hit>/2021-03-31_HIT_landuse-per-subcatchment/subcatchments_landuse_v1.0.0.xlsx",
+  swmm_annualrunoff = "<data_hit>/WP2_Data_HIT_20201023/swmm_annual_runoff_v1.0.0.txt",
+  sewer_connection = "<data_hit>/2021-10-18_email/cleaned/subcatchments_sewer-connection.xls"
 )
 
 paths <- kwb.utils::resolve(path_list)
 
+
 # load shapefile containing subcatchments ('blockteilflächen')
-abimo <- raster::shapefile(file.path(paths$gis, 'input_subareas.shp'))
+abimo_org <- raster::shapefile(file.path(paths$gis, 'input_subareas.shp'))
 
 # make ABIMO 'CODE' column
-names(abimo@data) <- "CODE" 
+names(abimo_org@data) <- "CODE" 
 
 # pad CODE with zeroes to match output of ABIMO
-abimo@data$CODE <- urbanAnnualRunoff::padCODE(abimo@data$CODE)
+abimo_org@data$CODE <- urbanAnnualRunoff::padCODE(abimo_org@data$CODE)
 
 # build classification model
-urbanAnnualRunoff::buildClassMod(
+kwb.ml::buildClassMod(
   rawdir = paths$gis,
   image = 'input_image.img',
   groundTruth = 'input_groundtruth.shp',
@@ -79,7 +96,7 @@ caret::confusionMatrix(data = model$finalModel$predicted,
                        mode = 'prec_recall')
                        
 # classify image for roofs and streets
-urbanAnnualRunoff::predictSurfClass(rawdir = paths$gis,
+kwb.ml::predictSurfClass(rawdir = paths$gis,
                                     modelName = 'rForest.Rdata',
                                     image = 'input_image.img',
                                     predName = 'classified_image.img')
@@ -88,82 +105,113 @@ urbanAnnualRunoff::predictSurfClass(rawdir = paths$gis,
 # of the classified image for each subcatchment)
 urbanAnnualRunoff::makeOverlay(rawdir = paths$gis,
                                rasterData = 'classified_image.img',
-                               subcatchmSPobject = abimo,
+                               subcatchmSPobject = abimo_org,
                                overlayName = 'surfType')
+
+# compute ABIMO variable STR_FLGES (m2 street area)
+abimo_org@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(
+  rawdir = paths$gis,
+  subcatchmSPobject = abimo_org,
+  mask = 'input_maskUrbanCore.shp',
+  rasterData = 'classified_image.img',
+  overlayName = 'surfType',
+  targetValue = 2, 
+  add_streets_outside_subcatchments = FALSE
+  )
+
 # make ABIMO variable FLGES
-abimo@data$FLGES <- urbanAnnualRunoff::makeFLGES(subcatchmSPobject = abimo)
+abimo_org@data$FLGES <- urbanAnnualRunoff::makeFLGES(subcatchmSPobject = abimo_org) - abimo_org@data$STR_FLGES
+
+# compute ABIMO variable VG (% soil sealing)
+abimo_org@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
+                        subcatchmSPobject = abimo_org,
+                        rasterData = 'input_impervious.tif',
+                        targetValue = 80)
+
 
 # compute ABIMO variable PROBAU (%roof)
-abimo@data$PROBAU <- urbanAnnualRunoff::makePROBAU(
+abimo_org@data$PROBAU <- urbanAnnualRunoff::makePROBAU(
   rawdir = paths$gis,
   rasterData = 'classified_image.img',
   overlayName = 'surfType',
   targetValue = 1)
-  
-# compute ABIMO variable STR_FLGES (m2 street area)
-abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(
-  rawdir = paths$gis,
-  subcatchmSPobject = abimo,
-  mask = 'input_maskUrbanCore.shp',
-  rasterData = 'classified_image.img',
-  overlayName = 'surfType',
-  targetValue = 2)
 
-# compute ABIMO variable VG (% soil sealing)
-abimo@data$VG <- urbanAnnualRunoff::makeVG(
-  rawdir = paths$gis,
-  subcatchmSPobject = abimo,
-  rasterData = 'input_impervious.tif',
-  targetValue = 80)
+### fix previously wrong calculated area shares (PROBAU, PROVGU, STR_FLGES)
+abimo <- urbanAnnualRunoff::fix_abimo_shares(abimo_org)
 
-# compute annual and summer rainfall. 
-# *** potential enhancement: ***
-# return the multiannual average annual rainfall. care must be taken to exclude
-# incomplete years from the average calculation. same for summer rainfall
-precipitation <- urbanAnnualRunoff::computeABIMOclimate(
-  rawdir = paths$climate,
-  fileName = sprintf('raw_climateeng_precipitation_daily_%s.txt', 
-                     paths$site),
-  skip = 6, sep = '', dec = '.',
-  outAnnual = 'precipitation_annual.txt',
-  outSummer ='precipitation_summer.txt')
-# compute annual and summer ETP. this goes manually into the ABIMO config file
-  evapotranspiration <- urbanAnnualRunoff::computeABIMOclimate(rawdir = paths$climate,
-                    fileName = sprintf('raw_climateeng_etp_daily_%s.txt', 
-                                       paths$site),
-                    skip = 6, sep = '', dec = '.',
-                    outAnnual = 'etp_annual.txt',
-                    outSummer = 'etp_summer.txt')
+## Decoupling from SWMM modelling: 
+## https://kwb-r.github.io/keys.lid/articles/scenarios.html#green-roof
+##
+# 100 % green-roof: with_berm_intensive_no-drainmat
+#abimo@data$PROBAU <- (1-1*(90.42-15.2)/100)*abimo@data$PROBAU # combi-1_high
+# 50 % green-roof: with_berm_intensive_no-drainmat
+#abimo@data$PROBAU <- (1-0.5*(90.42-15.2)/100)*abimo@data$PROBAU # combi-1_medium
+# 25 % green-roof: with_berm_intensive_no-drainmat
+#abimo@data$PROBAU <- (1-0.25*(90.42-15.2)/100)*abimo@data$PROBAU # combi-1_low
+# 100 % green-roof: with_berm_extensive_no-drainmat
+#abimo@data$PROBAU <- (1-1*(72.6-15.2)/100)*abimo@data$PROBAU # combi-2_high
+# 50 % green-roof: with_berm_extensive_no-drainmat
+#abimo@data$PROBAU <- (1-0.5*(72.6-15.2)/100)*abimo@data$PROBAU # combi-2_medium
+# 25 % green-roof: with_berm_extensive_no-drainmat
+#abimo@data$PROBAU <- (1-0.25*(72.6-15.2)/100)*abimo@data$PROBAU # combi-2_low
+
+
+## Decoupling from SWMM modelling: 
+## https://kwb-r.github.io/keys.lid/articles/scenarios.html#permeable-pavements
+## provgu <- abimo@data$PROVGU
+## abimo@data$PROVGU <- provgu
+# 100 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-100*(0.572-0.152)/50)*abimo@data$PROVGU # combi_high
+#  50 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-50*(0.572-0.152)/50)*abimo@data$PROVGU # combi_medium
+#  25 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-25*(0.572-0.152)/50)*abimo@data$PROVGU # combi_low
+#  10 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-10*(0.572-0.152)/50)*abimo@data$PROVGU 
 
 # use raw code to compute and assign remaining ABIMO variables manually
-# raw code ------------------------------------------------------------------------------
 
-# raw code ------------------------------------------------------------------------------
+### use Berlin Abimo data (for 'Blockteilflaechen' connected to channelisation ### to imrpove default parameterisation for 'unkown' underground types in Beijing 
+abimo_berlin <- foreign::read.dbf(paths$abimo_berlin) %>% 
+  dplyr::filter(KANAL == 1)
 
-# compute ABIMO variable PROVGU (% other impervious areas) as 
-# PROVGU = VG - PROBAU, setting any negative values to 0. this
-# happens for only <10% of subcatchments, and results mainly from
-# differences in spatial resolution and classification differences
-# between both datasets (our classified image and the global land 
-# use dataset)
-abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
-                            abimo@data$VG - abimo@data$PROBAU,
-                            0)
+share_vg_str <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^VGSTRASSE"), drop = FALSE] * abimo_berlin$STR_FLGES /sum(abimo_berlin$STR_FLGES))
+                       
+share_belag <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^BELAG")] * abimo_berlin$FLGES /sum(abimo_berlin$FLGES))
+share_belag <- share_belag*100/sum(share_belag)
+
+share_belag_str <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^STR_BELAG")] * abimo_berlin$STR_FLGES /sum(abimo_berlin$STR_FLGES))
+share_belag_str <- share_belag_str*100/sum(share_belag_str)
+
+share_kan <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^KAN_")] * (abimo_berlin$FLGES+abimo_berlin$STR_FLGES) /sum(abimo_berlin$FLGES+abimo_berlin$STR_FLGES))
 
 # % imperviousness streets
-abimo@data$VGSTRASSE <- 100
+abimo@data$VGSTRASSE <- share_vg_str #100 -> 90.0402
+
+## Decoupling from SWMM modelling: 
+## https://kwb-r.github.io/keys.lid/articles/scenarios.html#bioretention-cell
+## scenario: 3.6mm.per.h_mulde_no-drainage
+
+# 40 % of street area (unsealed area used as bioretention-cell)
+#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 40*(57.2-15.2)/50,1) #56.4 # combi_high
+# 20 % of street area (unsealed area used as bioretention-cell)
+#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 20*(57.2-15.2)/50,1) #73.2 # combi_medium
+# 10 % of street area (unsealed area used as bioretention-cell)
+#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 10*(57.2-15.2)/50,1) #81.6 # combi_low
+#  5 % of street area (unsealed area used as bioretention-cell)
+#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 5*(57.2-15.2)/50,1) #85.8
 
 # %cover types in other imperv. areas (PROVGU)
-abimo@data$BELAG1 <- 100
-abimo@data$BELAG2 <- 0
-abimo@data$BELAG3 <- 0
-abimo@data$BELAG4 <- 0
+abimo@data$BELAG1 <- share_belag[1] #100 -> 34.69844
+abimo@data$BELAG2 <- share_belag[2] #  0 -> 48.03494
+abimo@data$BELAG3 <- share_belag[3] #  0 ->  5.54433
+abimo@data$BELAG4 <- share_belag[4] #  0 -> 11.72229
 
 # %cover types in street areas
-abimo@data$STR_BELAG1 <- 100
-abimo@data$STR_BELAG2 <- 0
-abimo@data$STR_BELAG3 <- 0
-abimo@data$STR_BELAG4 <- 0
+abimo@data$STR_BELAG1 <- share_belag_str[1] #100 -> 51.344865
+abimo@data$STR_BELAG2 <- share_belag_str[2] #0 -> 26.501014
+abimo@data$STR_BELAG3 <- share_belag_str[3] #0 -> 14.497974
+abimo@data$STR_BELAG4 <- share_belag_str[4] #0 ->  7.656147
 
 # identifiers
 abimo@data$BEZIRK <- 1
@@ -174,76 +222,11 @@ abimo@data$NUTZUNG <- 21
 abimo@data$TYP <- 21
 
 
-# annual rainfall (this can be automatized by making 'computeABIMOclimate'
-# return the multiannual average annual rainfall. care must be taken to exclude
-# incomplete years from the average calculation)
-
-# manually averaged annual rainfall and summer rainfall
-abimo@data$REGENJA <- 1744 # averaged manually
-abimo@data$REGENSO <- 1258 # averaged manually
-  
-# better version using dplyr
-#year_min <- 2015
-#year_max <- 2019
-#abimo@data$REGENJA <- precipitation$total %>% 
-#  dplyr::filter(.data$year >= year_min & .data$year <= year_max) %>% 
-#  dplyr::summarise(value_mean = mean(.data$value)) %>% 
-#  dplyr::pull()
-#abimo@data$REGENSO <- precipitation$summer %>% 
-#  dplyr::filter(.data$year >= year_min & .data$year <= year_max) %>% 
-#  dplyr::summarise(value_mean = mean(.data$value)) %>%  
-#  dplyr::pull()
-
-### calculate mean evapotranspiration (total, summer) to be defined as input 
-### in ABIMO "config.xml" file
-# ept_mean <- tibble::tibble(total = evapotranspiration$total %>% 
-#   dplyr::filter(.data$year >= year_min & .data$year <= year_max) %>% 
-#   dplyr::summarise(value_mean = mean(value)) %>% 
-#   as.numeric(), 
-#   summer = evapotranspiration$summer %>% 
-#   dplyr::filter(.data$year >= year_min & .data$year <= year_max) %>% 
-#   dplyr::summarise(value_mean = mean(.data$value)) %>% 
-#   as.numeric())
-#   
-#   
-# abimo_config <- file.path(paths$abimo, "config.xml")
-# 
-# message(sprintf("Manually set values in ABIMO config file:
-# '%s'
-# 
-# In '<section name=\"PotentielleVerdunstung\">\"' 
-# 
-# Enter the following values for for 'BEZIRK = 1' and also default 'BEZIRK = 0'
-# etp: %4.0f
-# etps: %4.1f",
-#                 abimo_config,
-#                 ept_mean$total, 
-#                 ept_mean$summer))
-# ### open ABIMO config for manual data input
-# kwb.utils::hsOpenWindowsExplorer(abimo_config)
-
-  
-#abimo_config <- file.path(paths$abimo, "config.xml")
-
-#message(sprintf("Manually set values in ABIMO config file:
-'%s'
-
-#In '<section name=\"PotentielleVerdunstung\">\"' 
-
-#Enter the following values for for 'BEZIRK = 1' and also default 'BEZIRK = 0'
-#etp: %4.0f
-#etps: %4.1f",
-#                abimo_config,
-#                ept_mean$total, 
-#                ept_mean$summer))
-### open ABIMO config for manual data input
-#kwb.utils::hsOpenWindowsExplorer(abimo_config)
-
 # channelization degrees. these are set manually since there is no data
-abimo@data$KANAL<- 1
-abimo@data$KAN_BEB<- 100
-abimo@data$KAN_VGU<- 100
-abimo@data$KAN_STR<- 100
+abimo@data$KANAL <- 1
+abimo@data$KAN_BEB <- 80
+abimo@data$KAN_VGU <- 80
+abimo@data$KAN_STR <- 80
 
 # soil field capacity and groundwater level (personal communication, Dr. Lipin Li, 
 # Harbin Inst. of Technology)
@@ -251,24 +234,84 @@ abimo@data$FELD_30 <- 30
 abimo@data$FELD_150 <- 30
 abimo@data$FLUR <- 1.17
 
+# compute annual and summer rainfall. 
+# *** potential enhancement: ***
+# return the multiannual average annual rainfall. care must be taken to exclude
+# incomplete years from the average calculation. same for summer rainfall
+precipitation <- urbanAnnualRunoff::computeABIMOclimate(
+  rawdir = paths$climate,
+  file_inp = sprintf('raw_climateeng_precipitation_daily_%s.txt', 
+                     paths$site),
+  file_out = 'precipitation.txt',
+  summer_month_start = 4)
+# compute annual and summer ETP. this goes manually into the ABIMO config file
+  evapotranspiration <- urbanAnnualRunoff::computeABIMOclimate(
+  rawdir = paths$climate,
+  file_inp = sprintf('raw_climateeng_etp_daily_%s.txt', 
+                     paths$site),
+  file_out = 'evapotranspiration.txt',
+  summer_month_start = 4)
+  
+### Merge complete years (i.e. 2014-2019 for Jinxi)
+### mean rainfall: 1744mm
+climate_data <- dplyr::inner_join(precipitation, evapotranspiration,
+                                  by = "year", 
+                                  suffix = c(".p", ".etp")) %>%  
+  dplyr::mutate(dplyr::across(tidyselect::ends_with("p"), round))
+
+climate_data_mean <- dplyr::bind_cols(tibble::tibble(time_period = "2015-2019"), 
+                                      climate_data %>%  dplyr::summarise(
+                                        dplyr::across(.cols = tidyselect::starts_with("sum"), 
+                                                      .fns = mean)))
+openxlsx::write.xlsx(climate_data_mean, "climate_data_mean.xlsx")
+
+#wet year 2320mm (2016)
+#climate_data <- climate_data %>%  dplyr::filter(year == "2016")
+
+#dry year 1407mm (2019)
+#climate_data <- climate_data %>%  dplyr::filter(year == "2019")
+
+# annual rainfall (this can be automatized by making 'computeABIMOclimate'
+# return the multiannual average annual rainfall. care must be taken to exclude
+# incomplete years from the average calculation)
+round_mean <- function(values) {
+  round(mean(values), digits  = 0)
+}
+
+### Mean precipitation value for period 2014-2019
+abimo@data$REGENJA <- round_mean(climate_data$sum_annual.p)
+abimo@data$REGENSO <- round_mean(climate_data$sum_summer.p)
+
+### Mean evapotranspiration value for period 2014-2019
+kwb.abimo::abimo_xml_evap(
+  file_in = paths$abimo_config_original,
+  file_out = paths$abimo_config_modified,
+  evap_annual = round_mean(climate_data$sum_annual.etp),
+  evap_summer = round_mean(climate_data$sum_summer.etp)
+)
+
+### Check modified ABIMO config.xml
+kwb.utils::hsOpenWindowsExplorer(paths$abimo_config_modified)
+
 # select required columns and write out new shapefile
-requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 'TEILBLOCK',
-                  'NUTZUNG', 'TYP',
-                  'FLGES', 'STR_FLGES',
-                  'PROBAU', 'PROVGU', 'VGSTRASSE',
+requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 
+                  'TEILBLOCK', 'NUTZUNG', 'TYP', 'FLGES', 
+                  'STR_FLGES', 'PROBAU', 'PROVGU', 'VGSTRASSE',
                   'BELAG1', 'BELAG2', 'BELAG3', 'BELAG4',
                   'STR_BELAG1', 'STR_BELAG2', 'STR_BELAG3', 'STR_BELAG4',
                   'KAN_BEB', 'KAN_VGU', 'KAN_STR',
                   'REGENJA', 'REGENSO',
                   'FELD_30', 'FELD_150', 'FLUR')
-abimo@data <- abimo@data[, requiredCols]
+abimo@data <- kwb.utils::selectColumns(abimo@data, 
+                                       columns = requiredCols)
 
-# format numbers to 0 decimal places
-abimo@data[, 8:ncol(abimo@data)] <- round(
-  abimo@data[, 8:ncol(abimo@data)],
-  digits = 0)
+# format numbers to 0 decimal places (avoid 'pseudo-accuracy')
+#abimo@data[, 8:ncol(abimo@data)] <- round(
+#  abimo@data[, 8:ncol(abimo@data)],
+#  digits = 0)
 
-# change decimal separator to comma (ABIMO does not run correctly otherwise)
+# change decimal separator to comma
+# (ABIMO does not run correctly otherwise) 
 abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
                                          c(1, 2),
                                          FUN=as.character),
@@ -278,12 +321,17 @@ abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
                                  replacement=","),
                            stringsAsFactors = FALSE)
 
+
+
+
 # write ABIMO input table
-abimo_inp <- sprintf('abimo_%s.shp', paths$site)
-abimo_inp_path <- file.path(paths$abimo, abimo_inp)
 raster::shapefile(x=abimo, 
-                  filename=abimo_inp_path,
+                  filename=paths$abimo_inp_shp,
                   overwrite=TRUE)
+
+
+kwb.abimo::write.dbf.abimo(abimo, 
+                           new_dbf = paths$abimo_inp_dbf)
 
 
 # run ABIMO manually in GUI ----------------------------------------------------
@@ -304,14 +352,167 @@ kwb.utils::hsOpenWindowsExplorer(paths$abimo_exe)
 # postprocessing ----------------------------------------------------------------
 # post-process ABIMO output file -> join it with input shape file for 
 # visualization in GIS
-urbanAnnualRunoff::postProcessABIMO(rawdir = paths$abimo,
-                 nameABIMOin = abimo_inp,
-                 nameABIMOout = abimo_out,
-                 ABIMOjoinedName = sprintf("%s_joined.dbf", abimo_out)
-                )
-}
 
-}
+scenario_results_jinxi <- urbanAnnualRunoff::get_scenario_results(paths)
 
+scenario_results_jinxi %>%  
+dplyr::select(!tidyselect::all_of(c("abimo_inpout", "abimo_inpout_emissions"))) %>% 
+openxlsx::write.xlsx(file = "scenario_results_jinxi.xlsx",
+                     overwrite = TRUE)
+#usethis::use_data(scenario_results_jinxi, overwrite = TRUE)
+
+
+```
+
+## Scenario Results
+
+Below is a summary table with the ABIMO water balance modelling results for the different `de-coupling` scenarios. 
+Combining (`combi_xxx`) the different single measures, i.e. `bioretention cells` (for streets), `green roofs` (for sealed areas with buildings),  and `permeable pavements` (for sealed areas without buildings/streets)) enables to satisfy the `VRR` (volume rainfall retended) goal defined for climate zone 4, i.e `0.70 >= VRR <= 0.85`.
+
+
+
+
+```{r scenario_results, eval = TRUE}
+library(urbanAnnualRunoff)
+DT::datatable(urbanAnnualRunoff::scenario_results_jinxi %>%  dplyr::select(!tidyselect::all_of(c("abimo_inpout", "abimo_inpout_emissions"))))
+```
+
+
+## Land Use Classification Comparison 
+
+```{r landuse_comparison, eval = FALSE}
+landuse_hit <- shapefiles::read.dbf(paths$landuse_hit)
+landuse_hit_stats <- landuse_hit$dbf %>%  
+  dplyr::mutate(landuse_name = kwb.utils::multiSubstitute(.data$landuse, 
+                           list(
+                           '1' = "pervious",
+                           '2' = "pervious",
+                           '3' = "roof", 
+                           '4' = "street",
+                           '5' = "water")
+                           )
+                ) %>%
+  dplyr::group_by(.data$landuse_name) %>% 
+  dplyr::summarise(area_m2 = sum(.data$area_m2),
+                   area_percent = round(100*area_m2/sum(landuse_hit$dbf$area_m2),1)) %>% 
+  dplyr::rename(landuse = .data$landuse_name) %>%  
+  dplyr::arrange(.data$landuse) %>% 
+  dplyr::select(.data$landuse, .data$area_percent)
+
+landuse_kwb <- raster::raster(paths$landuse_kwb)
+
+landuse_kwb_values <- raster::values(landuse_kwb)
+landuse_kwb_values_vector <- table(landuse_kwb_values[!is.na(landuse_kwb_values)])
+landuse_kwb_stats <- tibble::tibble(landuse_id = names(landuse_kwb_values_vector),
+                                    landuse = kwb.utils::multiSubstitute(landuse_id,
+                                                                         list('1' = "roof",
+                                                                              '2' = "street",
+                                                                              '3' = "pervious",
+                                                                              '4' = "shadow",
+                                                                              '5' = "water")),
+                                    area_m2 = landuse_kwb_values_vector,
+                                    area_total = sum(landuse_kwb_values_vector),
+                                    area_percent = round(100*area_m2/area_total,1)) %>%  
+  dplyr::arrange(.data$landuse) %>% 
+  dplyr::select(.data$landuse, .data$area_percent)
+
+
+catchments_hit_abimo <- shapefiles::read.dbf(paths$catchments_hit_abimo)
+names(catchments_hit_abimo$dbf)[5] <- "subcatchment_name"
+
+
+landuse_authority_data <- readxl::read_xlsx(paths$landuse_authority, 
+                                            sheet = "data")
+landuse_authority_metadata <- readxl::read_xlsx(paths$landuse_authority, 
+                                                sheet = "metadata")
+
+landuse_authority_stats <- landuse_authority_data %>%  
+  dplyr::left_join(landuse_authority_metadata,
+                   by = "landuse_id") %>% 
+  dplyr::right_join(catchments_hit_abimo$dbf[,c("subcatchment_name", "area_m2")],
+                   by = "subcatchment_name") %>% 
+  dplyr::group_by(.data$landuse_name) %>% 
+  dplyr::summarise(percent = round(sum(.data$area_m2 * .data$percent)/sum(catchments_hit_abimo$dbf$area_m2),1)) %>% 
+  dplyr::mutate(landuse_name = kwb.utils::multiSubstitute(.data$landuse_name, 
+                             list('greenland' = "pervious",
+                                  'road' = "streets"
+                                  ))) %>% 
+  dplyr::arrange(.data$landuse_name)
+
+
+openxlsx::write.xlsx(list(landuse_hit_stats = landuse_hit_stats,
+                          landuse_kwb_stats = landuse_kwb_stats,
+                          landuse_authority_stats = landuse_authority_stats ),
+                     file = "landuse_classification_comparison.xlsx",
+                     overwrite = TRUE
+                     )
+
+```
+
+## ABIMO vs SWMM Comparison 
+
+```{r water_balance_comparison, eval = FALSE}
+
+swmm_annualrunoff <- read.table(file = paths$swmm_annualrunoff,  
+                                sep = "", 
+                                skip = 9, 
+                                header = TRUE)
+
+
+catchments_hit_abimo_connected_100 <- catchments_hit_abimo$dbf[,c("subcatchment_name", "area_m2", "connection")] %>% 
+  dplyr::filter(.data$connection == 100)
+
+
+catchments_hit_abimo_connected_0 <- catchments_hit_abimo$dbf[,c("subcatchment_name", "area_m2", "connection")] %>% 
+  dplyr::filter(.data$connection == 0)
+
+swmm_catchment_abimo <- catchments_hit_abimo_connected_100 %>% #catchments_hit_abimo$dbf[,c("subcatchment_name", "area_m2")] 
+  dplyr::mutate(area_percent = .data$area_m2/sum(.data$area_m2)) %>% 
+  dplyr::left_join(swmm_annualrunoff, by = "subcatchment_name") %>% 
+  dplyr::summarise(area_m2 = sum(.data$area_m2),
+                   total_precip_mm = sum(.data$area_percent*.data$total_precip_mm),
+                   total_evap_mm = sum(.data$area_percent*.data$total_evap_mm),
+                   total_infil_mm = sum(.data$area_percent*.data$total_infil_mm),
+                   total_runoff_mm = sum(.data$area_percent*.data$total_runoff_mm)) %>% 
+  dplyr::mutate(vrr = round((1 - total_runoff_mm/total_precip_mm)*100, 1))
+
+catchments_hit_all <- shapefiles::read.dbf(paths$catchments_hit_all)
+names(catchments_hit_all$dbf)[5] <- "subcatchment_name"
+
+swmm_catchment_all <- catchments_hit_all$dbf[,c("subcatchment_name", "area_m2")] %>% 
+  dplyr::mutate(area_percent = .data$area_m2/sum(catchments_hit_all$dbf$area_m2)) %>% 
+  dplyr::left_join(swmm_annualrunoff, by = "subcatchment_name") %>% 
+  dplyr::summarise(total_precip_mm = sum(.data$area_percent*.data$total_precip_mm),
+                   total_evap_mm = sum(.data$area_percent*.data$total_evap_mm),
+                   total_infil_mm = sum(.data$area_percent*.data$total_infil_mm),
+                   total_runoff_mm = sum(.data$area_percent*.data$total_runoff_mm)) %>% 
+  dplyr::mutate(vrr = round((1 - total_runoff_mm/total_precip_mm)*100, 1))
+
+
+swmm_catchment_stats <- dplyr::bind_cols(tibble::tibble(catchment = c("all", "abimo")),
+                                         dplyr::bind_rows(swmm_catchment_all, 
+                                                      swmm_catchment_abimo)
+                                         )
+
+sewer_connection <- readxl::read_xls(paths$sewer_connection)
+sewer_connection_stats_abimo <- catchments_hit_abimo$dbf %>% 
+  dplyr::mutate(area_percent = .data$area_m2/sum(catchments_hit_abimo$dbf$area_m2)) %>% 
+  dplyr::left_join(sewer_connection, by = "subcatchment_name") %>% 
+  dplyr::summarise(connection_percent = sum(.data$area_percent*.data$connect))
+
+
+sewer_connection_stats_all <- catchments_hit_all$dbf %>% 
+  dplyr::mutate(area_percent = .data$area_m2/sum(catchments_hit_all$dbf$area_m2)) %>% 
+  dplyr::left_join(sewer_connection, by = "subcatchment_name") %>% 
+  dplyr::summarise(connection_percent = sum(.data$area_percent*.data$connect))
+
+sewer_connection_stats <- dplyr::bind_cols(tibble::tibble(catchment = c("all", "abimo")),
+                                         dplyr::bind_rows(sewer_connection_stats_all, 
+                                                      sewer_connection_stats_abimo)
+                                         )
+
+
+urbanAnnualRunoff::read_concentrations(paths$emissions_input)[,c("VariableName", "mean", "UnitsAbbreviation")] %>% 
+  openxlsx::write.xlsx("concentrations.xlsx")
 
 ```

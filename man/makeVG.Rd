@@ -2,7 +2,7 @@
 % Please edit documentation in R/abimo.R
 \name{makeVG}
 \alias{makeVG}
-\title{compute ABIMO variable VG (\% soil sealing)}
+\title{compute ABIMO variable VG (soil sealing percentage)}
 \usage{
 makeVG(rawdir, subcatchmSPobject, rasterData, targetValue)
 }

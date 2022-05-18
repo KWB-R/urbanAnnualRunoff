@@ -2,7 +2,7 @@
 % Please edit documentation in R/abimo.R
 \name{makeSTR_FLGES}
 \alias{makeSTR_FLGES}
-\title{compute ABIMO variable STR_FLGES}
+\title{compute ABIMO variable STR_FLGES (street area of block area)}
 \usage{
 makeSTR_FLGES(
   rawdir,
@@ -10,7 +10,8 @@ makeSTR_FLGES(
   rasterData,
   overlayName,
   targetValue,
-  mask
+  mask,
+  add_streets_outside_subcatchments = FALSE
 )
 }
 \arguments{
@@ -25,10 +26,16 @@ makeSTR_FLGES(
 \item{targetValue}{targetValue}
 
 \item{mask}{mask}
+
+\item{add_streets_outside_subcatchments}{boolean (TRUE/FALSE), if TRUE:
+as is done for Berlin, street area outside of the subcatchment polygons is distributed
+among the polygons in proportion to their area. thus: street area of polygon =
+internal street area + allocated external street area, if FALSE: only street
+area within subcatchments are counted (default: FALSE)}
 }
 \value{
 STR_FLGES
 }
 \description{
-compute ABIMO variable STR_FLGES
+compute ABIMO variable STR_FLGES (street area of block area)
 }

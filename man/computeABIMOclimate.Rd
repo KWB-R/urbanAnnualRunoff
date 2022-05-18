@@ -4,25 +4,35 @@
 \alias{computeABIMOclimate}
 \title{abimo: compute climate}
 \usage{
-computeABIMOclimate(rawdir, fileName, skip, sep, dec, outAnnual, outSummer)
+computeABIMOclimate(
+  rawdir,
+  file_inp,
+  file_out,
+  summer_month_start = 4,
+  skip = 6,
+  sep = "",
+  dec = "."
+)
 }
 \arguments{
 \item{rawdir}{rawdir}
 
-\item{fileName}{fileName}
+\item{file_inp}{name of input file}
 
-\item{skip}{skip}
+\item{file_out}{name of output file to be written in "raw_dir"}
 
-\item{sep}{sep}
+\item{summer_month_start}{number of month where summer half year starts
+(default: 4)}
 
-\item{dec}{dec}
+\item{skip}{skip (default: 6)}
 
-\item{outAnnual}{outAnnual}
+\item{sep}{sep (default: '')}
 
-\item{outSummer}{outSummer}
+\item{dec}{dec (default: '.')}
 }
 \value{
-???
+data frame with yearly summed measurements (summer half year,
+total year sum) and also text file written to "raw_dir" with "out_file" name
 }
 \description{
 read Climate Engine data and compute (source:

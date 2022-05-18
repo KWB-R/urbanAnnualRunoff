@@ -2,7 +2,7 @@
 title: "Workflow: Beijing"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{"Workflow: Beijing"}
+  %\VignetteIndexEntry{Workflow: Beijing}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -13,6 +13,8 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
+
+## Workflow
 
 ```{r workflow, eval = FALSE}
 ### prerequisites (64bit R)
@@ -36,24 +38,33 @@ path_list <- list(
   site = "Beijing",
   data = "WP2_SUW_pollution_<site>",
   abimo = "<root_path>/<data>/_DataAnalysis/abimo",
+  abimo_inp_shp = "<abimo>/abimo_<site>.shp",
+  abimo_inp_dbf = "<abimo>/abimo_<site>.dbf",
+  abimo_out = "abimo_<site>out.dbf",
+  abimo_berlin = "<abimo>/abimo_2019_mitstrassen.dbf",
+  abimo_scenarios = "<abimo>/scenarios/de-coupling",
+  abimo_config_original = "<abimo>/config_original.xml",
+  abimo_config_modified = "<abimo>/config.xml",
   abimo_exe = "<abimo>/Abimo3_2.exe",
   gis = "<root_path>/<data>/_DataAnalysis/gis",
-  climate = "<root_path>/<data>/_DataAnalysis/climate"
+  climate = "<root_path>/<data>/_DataAnalysis/climate",
+  emissions_input = "<root_path>/<data>/_DataAnalysis/emissions/input/annual_mean_conc.csv",
+  emissions_output = "<root_path>/<data>/_DataAnalysis/emissions/output"
 )
 
 paths <- kwb.utils::resolve(path_list)
 
 # load shapefile containing subcatchments ('blockteilflächen')
-abimo <- raster::shapefile(file.path(paths$gis, 'input_subareas.shp'))
+abimo_org <- raster::shapefile(file.path(paths$gis, 'input_subareas.shp'))
 
-# make ABIMO 'CODE' column
-abimo@data$CODE <- paste(abimo@data$Name, abimo@data$Outlet, sep='_')
+# make abimo 'CODE' column
+abimo_org@data$CODE <- paste(abimo_org@data$Name, abimo_org@data$Outlet, sep='_')
 
 # pad CODE with zeroes to match output of ABIMO
-abimo@data$CODE <- urbanAnnualRunoff::padCODE(abimo@data$CODE)
+abimo_org@data$CODE <- urbanAnnualRunoff::padCODE(abimo_org@data$CODE)
 
 # build classification model
-urbanAnnualRunoff::buildClassMod(
+kwb.ml::buildClassMod(
   rawdir = paths$gis,
   image = 'input_image.tif',
   groundTruth = 'input_groundtruth2.shp',
@@ -79,7 +90,7 @@ caret::confusionMatrix(data = model$finalModel$predicted,
                        mode = 'prec_recall')
 
 # classify image for roofs and streets
-urbanAnnualRunoff::predictSurfClass(rawdir = paths$gis,
+kwb.ml::predictSurfClass(rawdir = paths$gis,
                                     modelName = 'rForest.Rdata',
                                     image = 'input_image.tif',
                                     predName = 'classified_image.tif')
@@ -89,33 +100,145 @@ urbanAnnualRunoff::predictSurfClass(rawdir = paths$gis,
 # of the classified image for each subcatchment)
 urbanAnnualRunoff::makeOverlay(rawdir = paths$gis,
                                rasterData = 'classified_image.tif',
-                               subcatchmSPobject = abimo,
+                               subcatchmSPobject = abimo_org,
                                overlayName = 'surfType')
 
+
+# compute ABIMO variable STR_FLGES (m2 street area)
+abimo_org@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(
+  rawdir = paths$gis,
+  subcatchmSPobject = abimo_org,
+  mask = 'input_mask.shp',
+  rasterData = 'classified_image.tif',
+  overlayName = 'surfType',
+  targetValue = 2, 
+  add_streets_outside_subcatchments = FALSE
+  )
+
 # make ABIMO variable FLGES
-abimo@data$FLGES <- urbanAnnualRunoff::makeFLGES(subcatchmSPobject = abimo)
+abimo_org@data$FLGES <- urbanAnnualRunoff::makeFLGES(subcatchmSPobject = abimo_org) - abimo_org@data$STR_FLGES
+
+# compute ABIMO variable VG (% soil sealing)
+abimo_org@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
+                        subcatchmSPobject = abimo_org,
+                        rasterData = 'input_impervious.tif',
+                        targetValue = 80)
 
 # compute ABIMO variable PROBAU (%roof)
-abimo@data$PROBAU <- urbanAnnualRunoff::makePROBAU(
+abimo_org@data$PROBAU <- urbanAnnualRunoff::makePROBAU(
   rawdir = paths$gis,
   rasterData = 'classified_image.tif',
   overlayName = 'surfType',
   targetValue = 1)
 
-# compute ABIMO variable STR_FLGES (m2 street area)
-abimo@data$STR_FLGES <- urbanAnnualRunoff::makeSTR_FLGES(
-  rawdir = paths$gis,
-  subcatchmSPobject = abimo,
-  mask = 'input_mask.shp',
-  rasterData = 'classified_image.tif',
-  overlayName = 'surfType',
-  targetValue = 2)
 
-# compute ABIMO variable VG (% soil sealing)
-abimo@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
-                        subcatchmSPobject = abimo,
-                        rasterData = 'input_impervious.tif',
-                        targetValue = 80)
+### fix previously wrong calculated area shares (PROBAU, PROVGU, STR_FLGES)
+abimo <- urbanAnnualRunoff::fix_abimo_shares(abimo_org)
+
+
+## Decoupling from SWMM modelling: 
+## https://kwb-r.github.io/keys.lid/articles/scenarios.html#green-roof
+##
+# 100 % green-roof: with_berm_intensive_no-drainmat
+#abimo@data$PROBAU <- (1-1*(90.42-15.2)/100)*abimo@data$PROBAU # combi-1_high
+# 50 % green-roof: with_berm_intensive_no-drainmat
+#abimo@data$PROBAU <- (1-0.5*(90.42-15.2)/100)*abimo@data$PROBAU # combi-1_medium
+# 25 % green-roof: with_berm_intensive_no-drainmat
+#abimo@data$PROBAU <- (1-0.25*(90.42-15.2)/100)*abimo@data$PROBAU # combi-1_low
+# 100 % green-roof: with_berm_extensive_no-drainmat
+#abimo@data$PROBAU <- (1-1*(72.6-15.2)/100)*abimo@data$PROBAU  # combi-2_high
+# 50 % green-roof: with_berm_extensive_no-drainmat
+#abimo@data$PROBAU <- (1-0.5*(72.6-15.2)/100)*abimo@data$PROBAU # combi-2_medium
+# 25 % green-roof: with_berm_extensive_no-drainmat
+#abimo@data$PROBAU <- (1-0.25*(72.6-15.2)/100)*abimo@data$PROBAU # combi-2_low
+
+
+
+
+## Decoupling from SWMM modelling: 
+## https://kwb-r.github.io/keys.lid/articles/scenarios.html#permeable-pavements
+##
+# 100 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-100*(0.572-0.152)/50)*abimo@data$PROVGU # combi_high
+#  50 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-50*(0.572-0.152)/50)*abimo@data$PROVGU # combi_medium
+#  25 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-25*(0.572-0.152)/50)*abimo@data$PROVGU # combi_low
+#  10 % permeable pavements: 180mm.per.hour_no-drainage
+#abimo@data$PROVGU <- (1-10*(0.572-0.152)/50)*abimo@data$PROVGU
+
+# use raw code to compute and assign remaining ABIMO variables manually
+
+### use Berlin Abimo data (for 'Blockteilflaechen' connected to channelisation ### to imrpove default parameterisation for 'unkown' underground types in Beijing 
+abimo_berlin <- foreign::read.dbf(paths$abimo_berlin) %>% 
+  dplyr::filter(KANAL == 1)
+
+share_vg_str <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^VGSTRASSE"), drop = FALSE] * abimo_berlin$STR_FLGES /sum(abimo_berlin$STR_FLGES))
+                           
+share_belag <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^BELAG")] * abimo_berlin$FLGES /sum(abimo_berlin$FLGES))
+share_belag <- share_belag*100/sum(share_belag)
+
+share_belag_str <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^STR_BELAG")] * abimo_berlin$STR_FLGES /sum(abimo_berlin$STR_FLGES))
+share_belag_str <- share_belag_str*100/sum(share_belag_str)
+
+share_kan <- colSums(abimo_berlin[, stringr::str_detect(names(abimo_berlin), "^KAN_")] * (abimo_berlin$FLGES+abimo_berlin$STR_FLGES) /sum(abimo_berlin$FLGES+abimo_berlin$STR_FLGES))
+
+
+# % imperviousness streets
+abimo@data$VGSTRASSE <- share_vg_str #100 -> 90.0402
+
+## Decoupling from SWMM modelling: 
+## https://kwb-r.github.io/keys.lid/articles/scenarios.html#bioretention-cell
+## scenario: 3.6mm.per.h_mulde_no-drainage
+
+# 40 % of street area (unsealed area used as bioretention-cell)
+#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 40*(57.2-15.2)/50,1) #56.4 # combi_high
+# 20 % of street area (unsealed area used as bioretention-cell)
+#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 20*(57.2-15.2)/50,1) #73.2 # combi_medium
+# 10 % of street area (unsealed area used as bioretention-cell)
+#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 10*(57.2-15.2)/50,1) #81.6 # combi_low
+#  5 % of street area (unsealed area used as bioretention-cell)
+#abimo@data$VGSTRASSE <- round(abimo@data$VGSTRASSE - 5*(57.2-15.2)/50,1) #85.8
+
+
+
+# %cover types in other imperv. areas (PROVGU)
+abimo@data$BELAG1 <- share_belag[1] #100 -> 34.69844
+abimo@data$BELAG2 <- share_belag[2] #  0 -> 48.03494
+abimo@data$BELAG3 <- share_belag[3] #  0 ->  5.54433
+abimo@data$BELAG4 <- share_belag[4] #  0 -> 11.72229
+
+# %cover types in street areas
+abimo@data$STR_BELAG1 <- share_belag_str[1] #100 -> 51.344865
+abimo@data$STR_BELAG2 <- share_belag_str[2] #0 -> 26.501014
+abimo@data$STR_BELAG3 <- share_belag_str[3] #0 -> 14.497974
+abimo@data$STR_BELAG4 <- share_belag_str[4] #0 ->  7.656147
+
+# identifiers
+abimo@data$BEZIRK <- 1
+abimo@data$STAGEB <- 1
+abimo@data$BLOCK <- 1
+abimo@data$TEILBLOCK <- 1
+# NUTZUNG = 21 (mixed area I: residential, trade, services)
+# https://www.stadtentwicklung.berlin.de/umwelt/umweltatlas/download/goedecke_et_al_abimo2019_doku.pdf#page=15
+abimo@data$NUTZUNG <- 21 
+# TYP = 38 (mixed area, mainly handicrafts and small businesses, with dense#
+#           development)  
+# https://www.stadtentwicklung.berlin.de/umwelt/umweltatlas/download/goedecke_et_al_abimo2019_doku.pdf#page=22
+abimo@data$TYP <- 38
+
+
+# channelization degrees. based on data provided BEWG (2020-11-03)
+abimo@data$KANAL <- 1
+abimo@data$KAN_BEB <- 80
+abimo@data$KAN_VGU <- 80
+abimo@data$KAN_STR <- 80
+
+# soil field capacity (provided BEWG on 2020-11-03) and 
+# groundwater level: 15m (email to MR on 2021-03-25 10:38 by Dr. Dong)
+abimo@data$FELD_30 <- 20
+abimo@data$FELD_150 <- 20
+abimo@data$FLUR <- 15
 
 # compute annual and summer rainfall. 
 # *** potential enhancement: ***
@@ -123,92 +246,76 @@ abimo@data$VG <- urbanAnnualRunoff::makeVG(rawdir = paths$gis,
 # incomplete years from the average calculation. same for summer rainfall
 precipitation <- urbanAnnualRunoff::computeABIMOclimate(
   rawdir = paths$climate,
-  fileName = sprintf('raw_climateeng_precipitation_monthly_%s.txt', 
+  file_inp = sprintf('raw_climateeng_precipitation_monthly_%s.txt', 
                      paths$site),
-  skip = 6, sep = '', dec = '.',
-  outAnnual = 'precipitation_annual.txt',
-  outSummer ='precipitation_summer.txt')
+  file_out = 'precipitation.txt',
+  summer_month_start = 4)
 
-# compute annual and summer ETP. this goes manually into the ABIMO config file
+# compute annual and summer ETP. this goes automatically into the 
+# ABIMO config file by using kwb.abimo::abimo_xml_evap() 
   evapotranspiration <- urbanAnnualRunoff::computeABIMOclimate(
   rawdir = paths$climate,
-  fileName = sprintf('raw_climateeng_etp_daily_%s.txt', 
+  file_inp = sprintf('raw_climateeng_etp_daily_%s.txt', 
                      paths$site),
-  skip = 6, sep = '', dec = '.',
-  outAnnual = 'etp_annual.txt',
-  outSummer = 'etp_summer.txt')
+  file_out = 'evapotranspiration.txt',
+  summer_month_start = 4)
 
-# use raw code to compute and assign remaining ABIMO variables manually
 
-# compute ABIMO variable PROVGU (% other impervious areas) as 
-# PROVGU = VG - PROBAU, setting any negative values to 0. this
-# happens for only <10% of subcatchments, and results mainly from
-# differences in spatial resolution and classification differences
-# between both datasets (our classified image and the global land 
-# use dataset)
-abimo@data$PROVGU <- ifelse((abimo@data$VG - abimo@data$PROBAU) > 0,
-                            abimo@data$VG - abimo@data$PROBAU,
-                            0)
+### Merge complete years (i.e. 2014-2019 for Beijing)
+### mean rainfall: 492mm
+climate_data <- dplyr::inner_join(precipitation, evapotranspiration,
+                                  by = "year", 
+                                  suffix = c(".p", ".etp")) %>%  
+  dplyr::mutate(dplyr::across(tidyselect::ends_with("p"), round))
 
-# % imperviousness streets
-abimo@data$VGSTRASSE <- 100
+#wet year 629mm (2018)
+#climate_data <- climate_data %>%  dplyr::filter(year == "2018")
 
-# %cover types in other imperv. areas (PROVGU)
-abimo@data$BELAG1 <- 100
-abimo@data$BELAG2 <- 0
-abimo@data$BELAG3 <- 0
-abimo@data$BELAG4 <- 0
+#dry year 351mm (2019)
+#climate_data <- climate_data %>%  dplyr::filter(year == "2019")
 
-# %cover types in street areas
-abimo@data$STR_BELAG1 <- 100
-abimo@data$STR_BELAG2 <- 0
-abimo@data$STR_BELAG3 <- 0
-abimo@data$STR_BELAG4 <- 0
-
-# identifiers
-abimo@data$BEZIRK <- 1
-abimo@data$STAGEB <- 1
-abimo@data$BLOCK <- 1
-abimo@data$TEILBLOCK <- 1
-abimo@data$NUTZUNG <- 21
-abimo@data$TYP <- 38
 
 # annual rainfall (this can be automatized by making 'computeABIMOclimate'
 # return the multiannual average annual rainfall. care must be taken to exclude
 # incomplete years from the average calculation)
-abimo@data$REGENJA <- 543
-abimo@data$REGENSO <- 491
+round_mean <- function(values) {
+  round(mean(values), digits  = 0)
+}
 
-# channelization degrees. these are set manually since there is no data
-abimo@data$KANAL<- 1
-abimo@data$KAN_BEB<- 100
-abimo@data$KAN_VGU<- 100
-abimo@data$KAN_STR<- 100
+### Mean precipitation value for period 2014-2019
+abimo@data$REGENJA <- round_mean(climate_data$sum_annual.p)
+abimo@data$REGENSO <- round_mean(climate_data$sum_summer.p)
 
-# soil field capacity and groundwater level
-abimo@data$FELD_30 <- 35
-abimo@data$FELD_150 <- 35
-abimo@data$FLUR <- 10
+### Mean evapotranspiration value for period 2014-2019
+kwb.abimo::abimo_xml_evap(
+  file_in = paths$abimo_config_original,
+  file_out = paths$abimo_config_modified,
+  evap_annual = round_mean(climate_data$sum_annual.etp),
+  evap_summer = round_mean(climate_data$sum_summer.etp)
+)
+
+### Check modified ABIMO config.xml
+kwb.utils::hsOpenWindowsExplorer(paths$abimo_config_modified)
 
 # select required columns and write out new shapefile
-requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 'TEILBLOCK',
-                  'NUTZUNG', 'TYP',
-                  'FLGES', 'STR_FLGES',
-                  'PROBAU', 'PROVGU', 'VGSTRASSE',
+requiredCols <- c('CODE', 'BEZIRK', 'STAGEB', 'BLOCK', 
+                  'TEILBLOCK', 'NUTZUNG', 'TYP', 'FLGES', 
+                  'STR_FLGES', 'PROBAU', 'PROVGU', 'VGSTRASSE',
                   'BELAG1', 'BELAG2', 'BELAG3', 'BELAG4',
                   'STR_BELAG1', 'STR_BELAG2', 'STR_BELAG3', 'STR_BELAG4',
                   'KAN_BEB', 'KAN_VGU', 'KAN_STR',
                   'REGENJA', 'REGENSO',
                   'FELD_30', 'FELD_150', 'FLUR')
-abimo@data <- abimo@data[, requiredCols]
+abimo@data <- kwb.utils::selectColumns(abimo@data, 
+                                       columns = requiredCols)
 
 # format numbers to 0 decimal places (avoid 'pseudo-accuracy')
-abimo@data[, 8:ncol(abimo@data)] <- round(
-  abimo@data[, 8:ncol(abimo@data)],
-  digits = 0)
+#abimo@data[, 8:ncol(abimo@data)] <- round(
+#  abimo@data[, 8:ncol(abimo@data)],
+#  digits = 0)
 
 # change decimal separator to comma
-# (ABIMO does not run correctly otherwise)
+# (ABIMO does not run correctly otherwise) 
 abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
                                          c(1, 2),
                                          FUN=as.character),
@@ -218,40 +325,59 @@ abimo@data <- as.data.frame(apply(X=apply(X=abimo@data,
                                  replacement=","),
                            stringsAsFactors = FALSE)
 
+
+
+
 # write ABIMO input table
-abimo_inp <- sprintf('abimo_%s.shp', paths$site)
-abimo_inp_path <- file.path(paths$abimo, abimo_inp)
 raster::shapefile(x=abimo, 
-                  filename=abimo_inp_path,
+                  filename=paths$abimo_inp_shp,
                   overwrite=TRUE)
 
 
+kwb.abimo::write.dbf.abimo(abimo, 
+                           new_dbf = paths$abimo_inp_dbf)
+
+
+
 # run ABIMO manually in GUI ----------------------------------------------------
-abimo_out <- sprintf('abimo_%sout.dbf', paths$site)
 if(!fs::file_exists(paths$abimo_exe)) {
-  stop(cat(sprintf("ABIMO executale does not exist: %s
+  stop(cat(sprintf("ABIMO executable does not exist: %s
 Please copy to this location", paths$abimo_exe)))
 } else {
 message(cat(sprintf("Run ABIMO executable manually:
 1. Select input file: \"%s\"
 2. Save it under: \"%s\"", 
                     abimo_inp_path, 
-                    abimo_out))
+                    paths$abimo_out))
 )
-      
-kwb.utils::hsOpenWindowsExplorer(paths$abimo_exe)
+}      
+kwb.utils::hsOpenWindowsExplorer(dirname(paths$abimo_exe))
 
 # postprocessing ----------------------------------------------------------------
 # post-process ABIMO output file -> join it with input shape file for 
 # visualization in GIS
-urbanAnnualRunoff::postProcessABIMO(rawdir = paths$abimo,
-                                    nameABIMOin = abimo_inp,
-                                    nameABIMOout = abimo_out,
-                                    ABIMOjoinedName = sprintf("%s_joined.dbf", abimo_out)
-)
-}
+
+scenario_results_beijing <- urbanAnnualRunoff::get_scenario_results(paths)
+
+scenario_results_beijing %>%  
+  dplyr::select(!tidyselect::all_of(c("abimo_inpout", "abimo_inpout_emissions"))) %>% 
+                  openxlsx::write.xlsx(file = "res_tz.xlsx", overwrite = TRUE)
+
+
+#usethis::use_data(scenario_results_beijing, overwrite = TRUE)
 
 }
+```
+
+## Scenario Results
+
+Below is a summary table with the ABIMO water balance modelling results for the different `de-coupling` scenarios. 
+Combining (`combi_xxx`) the different single measures, i.e. `bioretention cells` (for streets), `green roofs` (for sealed areas with buildings),  and `permeable pavements` (for sealed areas without buildings/streets)) enables to satisfy the `VRR` (volume rainfall retended) goal defined for climate zone 3, i.e `0.75 >= VRR <= 0.85`.
 
 
+
+
+```{r scenario_results, eval = TRUE}
+library(urbanAnnualRunoff)
+DT::datatable(urbanAnnualRunoff::scenario_results_beijing %>%  dplyr::select(!tidyselect::all_of(c("abimo_inpout", "abimo_inpout_emissions"))))
 ```

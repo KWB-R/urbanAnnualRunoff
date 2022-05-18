@@ -2,7 +2,7 @@
 % Please edit documentation in R/abimo.R
 \name{makeFLGES}
 \alias{makeFLGES}
-\title{compute ABIMO variable FLGES}
+\title{compute ABIMO variable FLGES (block area without street area)}
 \usage{
 makeFLGES(subcatchmSPobject)
 }
@@ -13,5 +13,5 @@ makeFLGES(subcatchmSPobject)
 ???
 }
 \description{
-compute ABIMO variable FLGES
+compute ABIMO variable FLGES (block area without street area)
 }

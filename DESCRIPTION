@@ -1,16 +1,16 @@
 Package: urbanAnnualRunoff
 Title: R Package for Deriving Urban Surfaces for Storm Runoff
     Analysis
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: 
     c(person(given = "Roberto",
              family = "Tatis-Muvdi",
              role = c("aut"),
-             email = "roberto.tatis-muvdi@kompetenz-wasser.de",
+             email = "robetatis@yahoo.com",
              comment = c(ORCID = "0000-0003-0490-7999")),
       person(given = "Michael",
              family = "Rustler",
-             role = c("ctb", "cre"),
+             role = c("aut", "cre"),
              email = "michael.rustler@kompetenz-wasser.de",
              comment = c(ORCID = "0000-0003-0647-7726")),
       person(given = "KEYS",
@@ -22,29 +22,37 @@ Description: Used in Project KEYS for generating inputs to
 License: MIT + file LICENSE
 URL: https://github.com/KWB-R/urbanAnnualRunoff
 BugReports: https://github.com/KWB-R/urbanAnnualRunoff/issues
+Depends: 
+    R (>= 3.5.0)
 Imports: 
-    caret,
     dplyr,
-    doParallel,
     foreign,
-    fs,
     kwb.utils,
     lubridate,
-    randomForest,
+    magrittr,
     raster,
     rlang,
-    rgdal,
-    remotes,
-    magrittr
+    stringr,
+    tibble,
+    tidyselect
 Suggests: 
+    caret, 
     covr,
+    DT,
+    fs,
     knitr,
+    kwb.abimo,
+    kwb.ml,
+    openxlsx,
+    remotes,
     rmarkdown
 VignetteBuilder: 
     knitr
 Remotes: 
+    github::kwb-r/kwb.abimo,
+    github::kwb-r/kwb.ml,
     github::kwb-r/kwb.utils
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2

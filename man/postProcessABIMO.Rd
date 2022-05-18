@@ -4,21 +4,17 @@
 \alias{postProcessABIMO}
 \title{abimo: postprocess}
 \usage{
-postProcessABIMO(rawdir, nameABIMOin, nameABIMOout, ABIMOjoinedName)
+postProcessABIMO(path_input, path_output)
 }
 \arguments{
-\item{rawdir}{rawdir}
+\item{path_input}{path of ABIMO input shapefile}
 
-\item{nameABIMOin}{nameABIMOin}
-
-\item{nameABIMOout}{nameABIMOout}
-
-\item{ABIMOjoinedName}{ABIMOjoinedName}
+\item{path_output}{path of ABIMO output DBF file}
 }
 \value{
-write shapefile with name "ABIMOjoinedName" to "rawdir"
+joined SpatialPolygonsDataFrame with ABIMO input and
+output
 }
 \description{
-read dbf results file, join with input shapefile and write
-output shapefile including ABIMO results
+read dbf results file and joins with input shapefile
 }
