@@ -1,7 +1,7 @@
 Package: urbanAnnualRunoff
 Title: R Package for Deriving Urban Surfaces for Storm Runoff
     Analysis
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: 
     c(person(given = "Roberto",
              family = "Tatis-Muvdi",
