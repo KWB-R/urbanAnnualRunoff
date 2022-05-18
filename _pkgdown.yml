@@ -14,14 +14,14 @@ authors:
 template:
   bootstrap: 5
   bootswatch: cerulean
+  docsearch:
+    api_key: 3b4f8dee7a78052bd10dd954369f2c28
+    index_name: urbanAnnualRunoff
   bslib:
     bg: '#ffffff'
     fg: '#000000'
     primary: '#007aff'
     border-radius: 0.5rem
     btn-border-radius: 0.25rem
-    docsearch:
-      api_key: 3b4f8dee7a78052bd10dd954369f2c28
-      index_name: urbanAnnualRunoff
 development:
   mode: auto
