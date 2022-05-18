@@ -9,8 +9,7 @@
 **R Package for Deriving Urban Surfaces for Storm Runoff 
 Analysis**
 
-Used in Project KEYS for generating inputs to
-runoff model ABIMO for application in cities with data scarcity.
+Used in Project [KEYS](https://www.kompetenz-wasser.de/en/forschung/projekte/keys) for generating inputs to runoff model [ABIMO](https://github.com/umweltatlas/abimo) for application in cities with data scarcity.
 
 ## Installation
 
