@@ -7,11 +7,13 @@ two case-study sites in China here:
 
 - [Tongzhou (Beijing)](https://kwb-r.github.io/urbanAnnualRunoff/articles/workflow_beijing.html)
 
+*Citation:* [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.6561481.svg)](https://doi.org/10.5281/zenodo.6561481)
 
 # urbanAnnualRunoff 0.0.0.9000
 
 * Added a `NEWS.md` file to track changes to the package.
 
 * see https://style.tidyverse.org/news.html for writing a good `NEWS.md`
+
 
 

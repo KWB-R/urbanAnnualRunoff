@@ -3,6 +3,7 @@
 [![codecov](https://codecov.io/github/KWB-R/urbanAnnualRunoff/branch/main/graphs/badge.svg)](https://codecov.io/github/KWB-R/urbanAnnualRunoff)
 [![Project Status](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/urbanAnnualRunoff)]()
+[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.6561481.svg)](https://doi.org/10.5281/zenodo.6561481)
 
 **R Package for Deriving Urban Surfaces for Storm Runoff 
 Analysis**
